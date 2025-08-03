@@ -1,0 +1,86 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "user-agent",
+          "operation": "set",
+          "value": "Mozilla/5.0 (QuantumOS 12.5; Quantum64; x64) AppleWebKit/888.88 (KHTML, like Gecko) HyperBrowser/500.0.0.0"
+        },
+        {
+          "header": "sec-ch-ua",
+          "operation": "set", 
+          "value": "\"QuantumBrowser\";v=\"500\", \"Not)A;Brand\";v=\"99\", \"HyperChrome\";v=\"888\""
+        },
+        {
+          "header": "sec-ch-ua-platform",
+          "operation": "set",
+          "value": "\"QuantumOS\""
+        },
+        {
+          "header": "sec-ch-ua-mobile",
+          "operation": "set",
+          "value": "?0"
+        },
+        {
+          "header": "accept-language",
+          "operation": "set",
+          "value": "quantum-QU,neural-NE;q=0.9,cyber-CY;q=0.8"
+        }
+      ]
+    },
+    "condition": {
+      "resourceTypes": ["main_frame", "sub_frame"],
+      "urlFilter": "*"
+    }
+  },
+  {
+    "id": 2,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "user-agent",
+          "operation": "set",
+          "value": "Mozilla/5.0 (HoloWindows 25.0; Win256; x256) HyperWebKit/2000.0 (KHTML, like Gecko) MetaBrowser/1000.0.0.0"
+        },
+        {
+          "header": "sec-ch-ua-platform",
+          "operation": "set",
+          "value": "\"HoloWindows\""
+        }
+      ]
+    },
+    "condition": {
+      "resourceTypes": ["main_frame"],
+      "urlFilter": "*eff.org*"
+    }
+  },
+  {
+    "id": 3,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "user-agent",
+          "operation": "set",
+          "value": "Mozilla/5.0 (CyberMac Intel 20.0; Intel Mac OS X 99_99_99) AppleWebKit/9999.99 MetaSafari/2000.0"
+        },
+        {
+          "header": "sec-ch-ua-platform",
+          "operation": "set",
+          "value": "\"CyberMac\""
+        }
+      ]
+    },
+    "condition": {
+      "resourceTypes": ["main_frame"],
+      "urlFilter": "*coveryourtracks*"
+    }
+  }
+]
