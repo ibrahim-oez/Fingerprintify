@@ -497,9 +497,10 @@
   
   // Function to update settings dynamically 
   window.updateFingerprintifySettings = function(newSettings) {
+    const oldSettings = { ...protectionSettings };
     Object.assign(protectionSettings, newSettings);
     window._fingerprintifySettings = protectionSettings;
-    console.log('🛡️ Settings updated dynamically:', protectionSettings);
+    console.log('🛡️ Settings updated from:', oldSettings, 'to:', protectionSettings);
     
     // Note: Some protections require page reload to take effect
     console.log('🛡️ Note: Navigator, Screen, WebGL protections require page reload');
@@ -507,6 +508,17 @@
     // Store settings globally for detection
     window._fingerprintifySettingsActive = protectionSettings;
   };
+  
+  // SAFETY: Check for preloaded settings again after a delay
+  setTimeout(() => {
+    if (window._fingerprintifyPreloadedSettings) {
+      const preloadedSettings = window._fingerprintifyPreloadedSettings;
+      console.log('🛡️ Applying delayed preloaded settings:', preloadedSettings);
+      window.updateFingerprintifySettings(preloadedSettings);
+    } else {
+      console.log('🛡️ No preloaded settings found - using safe defaults (all OFF)');
+    }
+  }, 200);
   
   // Load settings on initialization
   loadProtectionSettings();

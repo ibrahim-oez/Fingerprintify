@@ -34,6 +34,38 @@
   // CRITICAL: Preload settings IMMEDIATELY
   preloadSettings();
   
+  // Also inject settings later for scripts that load after us
+  function updateSettingsLater() {
+    chrome.storage.sync.get('fingerprintifySettings', (result) => {
+      const settings = result.fingerprintifySettings || {
+        navigator: false,
+        screen: false,
+        webgl: false,
+        canvas: false,
+        audio: false,
+        fonts: false,
+        webrtc: false,
+        tracking: false
+      };
+      
+      // Inject settings into main world
+      const script = document.createElement('script');
+      script.textContent = `
+        if (window.updateFingerprintifySettings) {
+          window.updateFingerprintifySettings(${JSON.stringify(settings)});
+          console.log('🛡️ Settings updated later:', ${JSON.stringify(settings)});
+        }
+      `;
+      (document.head || document.documentElement).appendChild(script);
+      script.remove();
+    });
+  }
+  
+  // Update settings after a delay too
+  setTimeout(updateSettingsLater, 100);
+  setTimeout(updateSettingsLater, 500);
+  setTimeout(updateSettingsLater, 1000);
+  
   // Extended protection status check with detailed reporting
   function checkProtectionStatus() {
     const status = {
