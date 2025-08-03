@@ -1,10 +1,31 @@
-// Enhanced Content Script for Fingerprintify with Settings Support
+// Enhanced Content Script for Fingerprintify
 (function() {
   'use strict';
   
   console.log('🛡️ Fingerprintify: Enhanced content script loaded');
   
-  // Extended protection status check with detailed reporting
+  // Extended protect          case 'checkDetails':
+            const detailedStatus = checkProtectionStatus();
+            sendResponse(detailedStatus);
+            console.log('📋 Detailed status sent');
+            break;
+            
+          case 'updateSettings':
+            // Update settings in inject script
+            if (message.settings && window.updateFingerprintifySettings) {
+              window.updateFingerprintifySettings(message.settings);
+              console.log('⚙️ Settings updated:', message.settings);
+              sendResponse({ success: true });
+            } else {
+              console.warn('⚠️ Could not update settings - function not available');
+              sendResponse({ success: false, error: 'Settings update function not available' });
+            }
+            break;
+          
+        } catch (e) {
+          console.error('❌ Message handling error:', e);
+          sendResponse({ error: e.message, active: false });
+        } check with detailed reporting
   function checkProtectionStatus() {
     const status = {
       active: false,
@@ -15,43 +36,16 @@
       webgl: {},
       canvas: false,
       webrtc: false,
-      settings: {},
       timestamp: new Date().toISOString()
     };
     
     // Check basic protection flags
-    // Since inject script runs in MAIN world, we need to check via DOM
-    let isActive = false;
-    try {
-      // Try to access the main world variables
-      isActive = window.wrappedJSObject?._fingerprintifyActive || 
-                 (typeof unsafeWindow !== 'undefined' && unsafeWindow._fingerprintifyActive);
-      
-      // Alternative check: Look for evidence of spoofing
-      if (!isActive) {
-        const spoofedUserAgents = ['QuantumOS', 'HoloWindows', 'CyberMac', 'UltraLinux', 'NeoAndroid'];
-        isActive = spoofedUserAgents.some(fake => navigator.userAgent.includes(fake));
-      }
-      
-      // Alternative check: Look for unrealistic hardware values
-      if (!isActive && navigator.hardwareConcurrency) {
-        const unrealisticCores = [3, 5, 7, 9, 11, 13, 15, 17, 20, 24, 28, 32, 48, 64, 96, 128, 256, 512, 1024];
-        isActive = unrealisticCores.includes(navigator.hardwareConcurrency);
-      }
-      
-    } catch(e) {
-      // Fallback: Check for evidence of protection
-      const spoofedUserAgents = ['QuantumOS', 'HoloWindows', 'CyberMac', 'UltraLinux', 'NeoAndroid'];
-      isActive = spoofedUserAgents.some(fake => navigator.userAgent.includes(fake));
-    }
-    
-    if (isActive) {
+    if (window._fingerprintifyActive) {
       status.active = true;
-      status.session = 'session_detected';
-      status.profile = 'active';
-      status.settings = {};
+      status.session = window._fingerprintifySession;
+      status.profile = window._fingerprintifyProfile;
       console.log('✅ Fingerprintify: ULTIMATE protection is ACTIVE');
-      console.log('🔒 Evidence: Spoofed values detected');
+      console.log('🔒 Session ID:', status.session);
     } else {
       console.warn('❌ Fingerprintify: Protection NOT detected!');
       return status;
@@ -75,12 +69,13 @@
       
       if (isSpoofed) {
         console.log('✅ Navigator: Successfully spoofed with', status.navigator.platform);
+        console.log('🔧 Hardware Cores:', status.navigator.hardwareConcurrency);
+        console.log('💾 Device Memory:', status.navigator.deviceMemory + 'GB');
       } else {
-        console.warn('⚠️ Navigator: May not be spoofed');
-        console.log('🌐 UserAgent:', status.navigator.userAgent);
+        console.warn('⚠️ Navigator: May not be fully spoofed');
       }
     } catch (e) {
-      console.log('✅ Navigator: Blocked or protected');
+      console.error('❌ Navigator check failed:', e);
     }
     
     // Check Screen spoofing
@@ -92,37 +87,36 @@
       };
       
       // Check for unrealistic resolutions
-      const unrealisticResolutions = [3333, 7777, 9999, 12000, 16384, 32768, 999, 1337];
-      const hasUnrealistic = unrealisticResolutions.includes(status.screen.width) || 
-                            unrealisticResolutions.includes(status.screen.height);
+      const unrealisticResolutions = [3333, 7777, 9999, 11111, 12000, 16384, 32768, 50000];
+      const hasUnrealisticRes = unrealisticResolutions.includes(status.screen.width) || 
+                               unrealisticResolutions.includes(status.screen.height);
       
-      if (hasUnrealistic) {
-        console.log('✅ Screen: Successfully spoofed with', status.screen.width + 'x' + status.screen.height);
+      if (hasUnrealisticRes) {
+        console.log('✅ Screen: Successfully spoofed to', status.screen.width + 'x' + status.screen.height);
+        console.log('🎨 Color Depth:', status.screen.colorDepth + ' bits');
       } else {
-        console.warn('⚠️ Screen: May not be spoofed');
-        console.log('📺 Resolution:', status.screen.width + 'x' + status.screen.height);
+        console.warn('⚠️ Screen: May not be spoofed (normal resolution detected)');
       }
     } catch (e) {
-      console.log('✅ Screen: Blocked or protected');
+      console.error('❌ Screen check failed:', e);
     }
     
     // Check WebGL spoofing
     try {
       const canvas = document.createElement('canvas');
       const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-      
       if (gl) {
         const vendor = gl.getParameter(gl.VENDOR);
         const renderer = gl.getParameter(gl.RENDERER);
-        
         status.webgl = { vendor, renderer };
         
-        // Check for spoofed values
-        const spoofedVendors = ['QuantumTech', 'HyperGraphics', 'CyberVision', 'MetaGraphics'];
-        const isSpoofed = spoofedVendors.some(fake => vendor.includes(fake));
+        const spoofedVendors = ['Quantum', 'Holo', 'Cyber', 'Meta', 'Ultra', 'Neural'];
+        const isWebGLSpoofed = spoofedVendors.some(fake => vendor.includes(fake) || renderer.includes(fake));
         
-        if (isSpoofed) {
-          console.log('✅ WebGL: Successfully spoofed with', vendor);
+        if (isWebGLSpoofed) {
+          console.log('✅ WebGL: Successfully spoofed');
+          console.log('🎮 Vendor:', vendor);
+          console.log('🖥️ Renderer:', renderer);
         } else {
           console.warn('⚠️ WebGL: May not be spoofed');
           console.log('🎮 Vendor:', vendor);
@@ -179,52 +173,34 @@
   // Run initial check
   let protectionStatus = checkProtectionStatus();
   
-  // Enhanced message handling with settings support
+  // Enhanced message handling with better error reporting
   if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
     try {
       chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         try {
           console.log('🛡️ Received message:', request.action);
           
-          switch (request.action) {
-            case 'getStatus':
-              // Always return fresh status
-              const freshStatus = checkProtectionStatus();
-              sendResponse(freshStatus);
-              console.log('📊 Status sent to popup:', freshStatus.active ? 'ACTIVE' : 'INACTIVE');
-              break;
-              
-            case 'regenerate':
-              console.log('🔄 Regenerating fingerprint...');
-              // Clear any cached status
-              protectionStatus = null;
-              // Reload page to get new fingerprint
-              setTimeout(() => {
-                window.location.reload();
-              }, 100);
-              break;
-              
-            case 'checkDetails':
-              const detailedStatus = checkProtectionStatus();
-              sendResponse(detailedStatus);
-              console.log('📋 Detailed status sent');
-              break;
-              
-            case 'updateSettings':
-              // Update settings in inject script
-              if (request.settings && window.updateFingerprintifySettings) {
-                window.updateFingerprintifySettings(request.settings);
-                console.log('⚙️ Settings updated:', request.settings);
-                sendResponse({ success: true });
-              } else {
-                console.warn('⚠️ Could not update settings - function not available');
-                sendResponse({ success: false, error: 'Settings update function not available' });
-              }
-              break;
-              
-            default:
-              console.log('❓ Unknown action:', request.action);
-              sendResponse({ error: 'Unknown action' });
+          if (request.action === 'getStatus') {
+            // Always return fresh status
+            const freshStatus = checkProtectionStatus();
+            sendResponse(freshStatus);
+            console.log('📊 Status sent to popup:', freshStatus.active ? 'ACTIVE' : 'INACTIVE');
+          }
+          
+          if (request.action === 'regenerate') {
+            console.log('🔄 Regenerating fingerprint...');
+            // Clear any cached status
+            protectionStatus = null;
+            // Reload page to get new fingerprint
+            setTimeout(() => {
+              window.location.reload();
+            }, 100);
+          }
+          
+          if (request.action === 'checkDetails') {
+            const detailedStatus = checkProtectionStatus();
+            sendResponse(detailedStatus);
+            console.log('📋 Detailed status sent');
           }
           
         } catch (e) {
@@ -255,7 +231,7 @@
   window._fingerprintifyDebug = {
     getStatus: checkProtectionStatus,
     lastCheck: () => protectionStatus,
-    version: '2.1.0'
+    version: '2.0.0'
   };
   
   console.log('🛡️ Enhanced Fingerprintify content script ready');

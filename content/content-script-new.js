@@ -20,38 +20,13 @@
     };
     
     // Check basic protection flags
-    // Since inject script runs in MAIN world, we need to check via DOM
-    let isActive = false;
-    try {
-      // Try to access the main world variables
-      isActive = window.wrappedJSObject?._fingerprintifyActive || 
-                 (typeof unsafeWindow !== 'undefined' && unsafeWindow._fingerprintifyActive);
-      
-      // Alternative check: Look for evidence of spoofing
-      if (!isActive) {
-        const spoofedUserAgents = ['QuantumOS', 'HoloWindows', 'CyberMac', 'UltraLinux', 'NeoAndroid'];
-        isActive = spoofedUserAgents.some(fake => navigator.userAgent.includes(fake));
-      }
-      
-      // Alternative check: Look for unrealistic hardware values
-      if (!isActive && navigator.hardwareConcurrency) {
-        const unrealisticCores = [3, 5, 7, 9, 11, 13, 15, 17, 20, 24, 28, 32, 48, 64, 96, 128, 256, 512, 1024];
-        isActive = unrealisticCores.includes(navigator.hardwareConcurrency);
-      }
-      
-    } catch(e) {
-      // Fallback: Check for evidence of protection
-      const spoofedUserAgents = ['QuantumOS', 'HoloWindows', 'CyberMac', 'UltraLinux', 'NeoAndroid'];
-      isActive = spoofedUserAgents.some(fake => navigator.userAgent.includes(fake));
-    }
-    
-    if (isActive) {
+    if (window._fingerprintifyActive) {
       status.active = true;
-      status.session = 'session_detected';
-      status.profile = 'active';
-      status.settings = {};
+      status.session = window._fingerprintifySession;
+      status.profile = window._fingerprintifyProfile;
+      status.settings = window._fingerprintifySettings || {};
       console.log('✅ Fingerprintify: ULTIMATE protection is ACTIVE');
-      console.log('🔒 Evidence: Spoofed values detected');
+      console.log('🔒 Session ID:', status.session);
     } else {
       console.warn('❌ Fingerprintify: Protection NOT detected!');
       return status;

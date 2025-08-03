@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 360px;
+      min-height: 500px;
+      margin: 0;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .header h1 {
+      margin: 0;
+      font-size: 18px;
+      color: #FFD700;
+    }
+    
+    .status {
+      margin: 15px 0;
+      padding: 12px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      text-align: center;
+      font-size: 14px;
+    }
+    
+    .status-active {
+      background: rgba(16, 185, 129, 0.3);
+      border: 1px solid #10B981;
+    }
+    
+    .status-inactive {
+      background: rgba(239, 68, 68, 0.3);
+      border: 1px solid #EF4444;
+    }
+    
+    .status-unknown {
+      background: rgba(59, 130, 246, 0.3);
+      border: 1px solid #3B82F6;
+    }
+
+    .settings-section {
+      margin: 20px 0;
+      padding: 15px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+    }
+
+    .settings-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      color: #FFD700;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+      padding-bottom: 8px;
+    }
+
+    .setting-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 12px 0;
+      padding: 8px 0;
+    }
+
+    .setting-label {
+      font-size: 14px;
+      flex: 1;
+    }
+
+    .setting-description {
+      font-size: 11px;
+      color: rgba(255,255,255,0.7);
+      margin-top: 3px;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 50px;
+      height: 24px;
+      background: rgba(255,255,255,0.3);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .toggle-switch.active {
+      background: #10B981;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.3s;
+    }
+
+    .toggle-switch.active .toggle-slider {
+      transform: translateX(26px);
+    }
+
+    .button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    
+    .button:hover {
+      background: rgba(255,255,255,0.3);
+    }
+    
+    .button:active {
+      background: rgba(255,255,255,0.4);
+    }
+
+    .button.primary {
+      background: #10B981;
+    }
+
+    .button.primary:hover {
+      background: #059669;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 15px 0;
+    }
+
+    .info-item {
+      background: rgba(255,255,255,0.1);
+      padding: 8px;
+      border-radius: 6px;
+      text-align: center;
+      font-size: 11px;
+    }
+
+    .info-label {
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 2px;
+    }
+
+    .info-value {
+      font-weight: bold;
+      color: #FFD700;
+    }
+
+    .tabs {
+      display: flex;
+      margin-bottom: 20px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 3px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 8px;
+      text-align: center;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+      font-size: 12px;
+    }
+
+    .tab.active {
+      background: rgba(255,255,255,0.2);
+      color: #FFD700;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .version-info {
+      text-align: center;
+      font-size: 10px;
+      color: rgba(255,255,255,0.5);
+      margin-top: 15px;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🛡️ Fingerprintify</h1>
+  </div>
+  
+  <div id="status" class="status status-unknown">
+    <div>Loading...</div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="status">📊 Status</div>
+    <div class="tab" data-tab="settings">⚙️ Settings</div>
+    <div class="tab" data-tab="info">ℹ️ Info</div>
+  </div>
+
+  <!-- Status Tab -->
+  <div id="status-tab" class="tab-content active">
+    <div class="info-grid" id="statusGrid">
+      <div class="info-item">
+        <div class="info-label">Navigator</div>
+        <div class="info-value" id="navigatorStatus">-</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Screen</div>
+        <div class="info-value" id="screenStatus">-</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">WebGL</div>
+        <div class="info-value" id="webglStatus">-</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Canvas</div>
+        <div class="info-value" id="canvasStatus">-</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">WebRTC</div>
+        <div class="info-value" id="webrtcStatus">-</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Audio</div>
+        <div class="info-value" id="audioStatus">-</div>
+      </div>
+    </div>
+
+    <button id="regenerateBtn" class="button primary">
+      🔄 Regenerate Fingerprint
+    </button>
+  </div>
+
+  <!-- Settings Tab -->
+  <div id="settings-tab" class="tab-content">
+    <div class="settings-section">
+      <div class="settings-title">🔒 Core Protection</div>
+      
+      <div class="setting-item">
+        <div>
+          <div class="setting-label">Navigator Spoofing</div>
+          <div class="setting-description">Fake browser & hardware info</div>
+        </div>
+        <div class="toggle-switch active" data-setting="navigator">
+          <div class="toggle-slider"></div>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div>
+          <div class="setting-label">Screen Spoofing</div>
+          <div class="setting-description">Fake screen resolution & color depth</div>
+        </div>
+        <div class="toggle-switch active" data-setting="screen">
+          <div class="toggle-slider"></div>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div>
+          <div class="setting-label">WebGL Spoofing</div>
+          <div class="setting-description">Fake graphics card info</div>
+        </div>
+        <div class="toggle-switch active" data-setting="webgl">
+          <div class="toggle-slider"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-title">🎨 Fingerprint Randomization</div>
+      
+      <div class="setting-item">
+        <div>
+          <div class="setting-label">Canvas Protection</div>
+          <div class="setting-description">Add noise to canvas fingerprints</div>
+        </div>
+        <div class="toggle-switch active" data-setting="canvas">
+          <div class="toggle-slider"></div>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div>
+          <div class="setting-label">Audio Spoofing</div>
+          <div class="setting-description">Randomize audio context fingerprints</div>
+        </div>
+        <div class="toggle-switch active" data-setting="audio">
+          <div class="toggle-slider"></div>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div>
+          <div class="setting-label">Font Detection</div>
+          <div class="setting-description">Confuse font fingerprinting</div>
+        </div>
+        <div class="toggle-switch active" data-setting="fonts">
+          <div class="toggle-slider"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-title">🚫 Blocking</div>
+      
+      <div class="setting-item">
+        <div>
+          <div class="setting-label">WebRTC Blocking</div>
+          <div class="setting-description">Prevent IP leaks via WebRTC</div>
+        </div>
+        <div class="toggle-switch active" data-setting="webrtc">
+          <div class="toggle-slider"></div>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div>
+          <div class="setting-label">Tracking Protection</div>
+          <div class="setting-description">Block localStorage tracking</div>
+        </div>
+        <div class="toggle-switch active" data-setting="tracking">
+          <div class="toggle-slider"></div>
+        </div>
+      </div>
+    </div>
+
+    <button id="saveSettingsBtn" class="button">
+      💾 Save Settings
+    </button>
+  </div>
+
+  <!-- Info Tab -->
+  <div id="info-tab" class="tab-content">
+    <div class="settings-section">
+      <div class="settings-title">📋 Current Fingerprint</div>
+      <div id="fingerprintInfo">
+        <div style="font-size: 12px; line-height: 1.4;">
+          <div><strong>Platform:</strong> <span id="currentPlatform">-</span></div>
+          <div><strong>Hardware:</strong> <span id="currentHardware">-</span></div>
+          <div><strong>Screen:</strong> <span id="currentScreen">-</span></div>
+          <div><strong>Session:</strong> <span id="currentSession">-</span></div>
+        </div>
+      </div>
+    </div>
+
+    <button id="exportBtn" class="button">
+      📤 Export Settings
+    </button>
+    
+    <button id="resetBtn" class="button">
+      🔄 Reset to Defaults
+    </button>
+  </div>
+
+  <div class="version-info">
+    Fingerprintify v1.0.0 | Enhanced Protection
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>

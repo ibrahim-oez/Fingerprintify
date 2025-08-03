@@ -4,10 +4,23 @@
   
   console.log('🛡️ Fingerprintify: ULTIMATE+ULTRA protection starting...');
   
+  // Protection settings (will be updated from storage)
+  let protectionSettings = {
+    navigator: true,
+    screen: true,
+    webgl: true,
+    canvas: true,
+    audio: true,
+    fonts: true,
+    webrtc: true,
+    tracking: true
+  };
+  
   // Set protection flags
   window._fingerprintifyActive = true;
   window._fingerprintifySession = 'session_' + Date.now();
   window._fingerprintifyProfile = Math.floor(Math.random() * 10) + 1;
+  window._fingerprintifySettings = protectionSettings;
   
   // Generate session-consistent random values
   const sessionSeed = Date.now() + Math.random();
@@ -93,46 +106,48 @@
   };
   
   // Aggressive Navigator Override using Object.defineProperty
-  try {
-    Object.defineProperty(window, 'navigator', {
-      get: () => fakeNav,
-      configurable: false
-    });
-  } catch(e) {
-    // Fallback: Override individual properties
+  if (protectionSettings.navigator) {
     try {
-      Object.defineProperty(navigator, 'userAgent', {
-        value: fakeNav.userAgent,
-        writable: false,
+      Object.defineProperty(window, 'navigator', {
+        get: () => fakeNav,
         configurable: false
       });
-      Object.defineProperty(navigator, 'platform', {
-        value: fakeNav.platform,
-        writable: false,
-        configurable: false
-      });
-      Object.defineProperty(navigator, 'hardwareConcurrency', {
-        value: fakeNav.hardwareConcurrency,
-        writable: false,
-        configurable: false
-      });
-      Object.defineProperty(navigator, 'deviceMemory', {
-        value: fakeNav.deviceMemory,
-        writable: false,
-        configurable: false
-      });
-      Object.defineProperty(navigator, 'maxTouchPoints', {
-        value: fakeNav.maxTouchPoints,
-        writable: false,
-        configurable: false
-      });
-      Object.defineProperty(navigator, 'userAgentData', {
-        value: fakeNav.userAgentData,
-        writable: false,
-        configurable: false
-      });
-    } catch(e2) {
-      console.log('🛡️ Navigator override partially failed:', e2);
+    } catch(e) {
+      // Fallback: Override individual properties
+      try {
+        Object.defineProperty(navigator, 'userAgent', {
+          value: fakeNav.userAgent,
+          writable: false,
+          configurable: false
+        });
+        Object.defineProperty(navigator, 'platform', {
+          value: fakeNav.platform,
+          writable: false,
+          configurable: false
+        });
+        Object.defineProperty(navigator, 'hardwareConcurrency', {
+          value: fakeNav.hardwareConcurrency,
+          writable: false,
+          configurable: false
+        });
+        Object.defineProperty(navigator, 'deviceMemory', {
+          value: fakeNav.deviceMemory,
+          writable: false,
+          configurable: false
+        });
+        Object.defineProperty(navigator, 'maxTouchPoints', {
+          value: fakeNav.maxTouchPoints,
+          writable: false,
+          configurable: false
+        });
+        Object.defineProperty(navigator, 'userAgentData', {
+          value: fakeNav.userAgentData,
+          writable: false,
+          configurable: false
+        });
+      } catch(e2) {
+        console.log('🛡️ Navigator override partially failed:', e2);
+      }
     }
   }
   
@@ -155,14 +170,16 @@
   const chosenRes = randomChoice(spoofedResolutions);
   const fakeColorDepth = [8, 16, 24, 32, 48, 64, 128][randomInt(0, 6)];
   
-  Object.defineProperties(window.screen, {
-    width: { get: () => chosenRes.width, configurable: false },
-    height: { get: () => chosenRes.height, configurable: false },
-    availWidth: { get: () => chosenRes.width - randomInt(0, 100), configurable: false },
-    availHeight: { get: () => chosenRes.height - randomInt(0, 100), configurable: false },
-    colorDepth: { get: () => fakeColorDepth, configurable: false },
-    pixelDepth: { get: () => fakeColorDepth, configurable: false }
-  });
+  if (protectionSettings.screen) {
+    Object.defineProperties(window.screen, {
+      width: { get: () => chosenRes.width, configurable: false },
+      height: { get: () => chosenRes.height, configurable: false },
+      availWidth: { get: () => chosenRes.width - randomInt(0, 100), configurable: false },
+      availHeight: { get: () => chosenRes.height - randomInt(0, 100), configurable: false },
+      colorDepth: { get: () => fakeColorDepth, configurable: false },
+      pixelDepth: { get: () => fakeColorDepth, configurable: false }
+    });
+  }
   
   // ==== ULTRA-AGGRESSIVE WEBGL SPOOFING ====
   const vendors = [
@@ -190,19 +207,20 @@
     shadingLanguageVersion: randomChoice(['WebGL GLSL ES 5.00', 'QuantumGLSL ES 10.0', 'NeuralGLSL ES 99.0'])
   };
   
-  // Override WebGL getParameter (both WebGL1 and WebGL2)
-  if (window.WebGLRenderingContext) {
-    const originalWebGLGetParameter = WebGLRenderingContext.prototype.getParameter;
-    WebGLRenderingContext.prototype.getParameter = function(parameter) {
-      switch(parameter) {
-        case this.VENDOR: return fakeWebGLInfo.vendor;
-        case this.RENDERER: return fakeWebGLInfo.renderer;
-        case this.VERSION: return fakeWebGLInfo.version;
-        case this.SHADING_LANGUAGE_VERSION: return fakeWebGLInfo.shadingLanguageVersion;
-        case this.UNMASKED_VENDOR_WEBGL: return fakeWebGLInfo.vendor;
-        case this.UNMASKED_RENDERER_WEBGL: return fakeWebGLInfo.renderer;
-        case this.MAX_TEXTURE_SIZE: return 32768;
-        case this.MAX_RENDERBUFFER_SIZE: return 32768;
+  if (protectionSettings.webgl) {
+    // Override WebGL getParameter (both WebGL1 and WebGL2)
+    if (window.WebGLRenderingContext) {
+      const originalWebGLGetParameter = WebGLRenderingContext.prototype.getParameter;
+      WebGLRenderingContext.prototype.getParameter = function(parameter) {
+        switch(parameter) {
+          case this.VENDOR: return fakeWebGLInfo.vendor;
+          case this.RENDERER: return fakeWebGLInfo.renderer;
+          case this.VERSION: return fakeWebGLInfo.version;
+          case this.SHADING_LANGUAGE_VERSION: return fakeWebGLInfo.shadingLanguageVersion;
+          case this.UNMASKED_VENDOR_WEBGL: return fakeWebGLInfo.vendor;
+          case this.UNMASKED_RENDERER_WEBGL: return fakeWebGLInfo.renderer;
+          case this.MAX_TEXTURE_SIZE: return 32768;
+          case this.MAX_RENDERBUFFER_SIZE: return 32768;
         case this.MAX_VIEWPORT_DIMS: return new Int32Array([32768, 32768]);
         default: return originalWebGLGetParameter.call(this, parameter);
       }
@@ -223,13 +241,15 @@
       }
     };
   }
+  }
   
   // ==== ULTRA-AGGRESSIVE CANVAS PROTECTION ====
-  const originalGetContext = HTMLCanvasElement.prototype.getContext;
-  HTMLCanvasElement.prototype.getContext = function(contextType, contextAttributes) {
-    const context = originalGetContext.call(this, contextType, contextAttributes);
-    
-    if (contextType === '2d' && context) {
+  if (protectionSettings.canvas) {
+    const originalGetContext = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function(contextType, contextAttributes) {
+      const context = originalGetContext.call(this, contextType, contextAttributes);
+      
+      if (contextType === '2d' && context) {
       // Override getImageData with massive noise injection
       const originalGetImageData = context.getImageData;
       context.getImageData = function(sx, sy, sw, sh) {
@@ -297,13 +317,15 @@
       }
       ctx.putImageData(imageData, 0, 0);
     }
-    return originalToDataURL.call(this, type, encoderOptions);
+  return originalToDataURL.call(this, type, encoderOptions);
   };
+  }
   
   // ==== TIMEZONE COMPLETE SPOOFING ====
   const fakeTimezones = [
-    'Quantum/QuantumCity', 'Holo/HoloMetropolis', 'Cyber/CyberVille',
-    'Meta/MetaLand', 'Ultra/UltraZone', 'Neural/NeuralBase'
+    'Pacific/Kiritimati', 'America/New_York', 'Europe/London', 
+    'Asia/Tokyo', 'Australia/Sydney', 'Africa/Cairo',
+    'Europe/Moscow', 'America/Los_Angeles', 'Asia/Shanghai'
   ];
   
   const chosenTimezone = randomChoice(fakeTimezones);
@@ -354,7 +376,7 @@
   }
   
   // ==== AUDIO FINGERPRINT SPOOFING ====
-  if (window.AudioContext || window.webkitAudioContext) {
+  if (protectionSettings.audio && (window.AudioContext || window.webkitAudioContext)) {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     
     // Override createOscillator
@@ -391,20 +413,22 @@
   }
   
   // ==== COMPLETE WEBRTC BLOCKING ====
-  if (window.RTCPeerConnection) {
-    window.RTCPeerConnection = function() {
-      throw new Error('WebRTC blocked by Fingerprintify');
-    };
-  }
-  if (window.webkitRTCPeerConnection) {
-    window.webkitRTCPeerConnection = function() {
-      throw new Error('WebRTC blocked by Fingerprintify');
-    };
-  }
-  if (window.mozRTCPeerConnection) {
-    window.mozRTCPeerConnection = function() {
-      throw new Error('WebRTC blocked by Fingerprintify');
-    };
+  if (protectionSettings.webrtc) {
+    if (window.RTCPeerConnection) {
+      window.RTCPeerConnection = function() {
+        throw new Error('WebRTC blocked by Fingerprintify');
+      };
+    }
+    if (window.webkitRTCPeerConnection) {
+      window.webkitRTCPeerConnection = function() {
+        throw new Error('WebRTC blocked by Fingerprintify');
+      };
+    }
+    if (window.mozRTCPeerConnection) {
+      window.mozRTCPeerConnection = function() {
+        throw new Error('WebRTC blocked by Fingerprintify');
+      };
+    }
   }
   
   // Block getUserMedia
@@ -449,11 +473,43 @@
   console.log('🛡️ Platform:', fakeNav.platform);
   console.log('🛡️ Hardware Cores:', fakeNav.hardwareConcurrency);
   console.log('🛡️ Device Memory:', fakeNav.deviceMemory + 'GB');
-  console.log('🛡️ Screen:', chosenRes.width + 'x' + chosenRes.height + 'x' + fakeColorDepth);
-  console.log('🛡️ WebGL Vendor:', fakeWebGLInfo.vendor);
-  console.log('🛡️ WebGL Renderer:', fakeWebGLInfo.renderer);
+  console.log('🛡️ Screen:', (protectionSettings.screen ? chosenRes.width + 'x' + chosenRes.height + 'x' + fakeColorDepth : 'original'));
+  console.log('🛡️ WebGL Vendor:', (protectionSettings.webgl ? fakeWebGLInfo.vendor : 'original'));
+  console.log('🛡️ WebGL Renderer:', (protectionSettings.webgl ? fakeWebGLInfo.renderer : 'original'));
   console.log('🛡️ Timezone:', chosenTimezone);
-  console.log('🛡️ Canvas/WebGL/Audio fingerprints randomized');
-  console.log('🛡️ WebRTC completely blocked');
+  console.log('🛡️ Canvas/WebGL/Audio fingerprints:', (protectionSettings.canvas && protectionSettings.webgl && protectionSettings.audio ? 'randomized' : 'conditional'));
+  console.log('🛡️ WebRTC:', (protectionSettings.webrtc ? 'blocked' : 'allowed'));
+  console.log('🛡️ Protection Settings:', protectionSettings);
+  
+  // Function to load settings from Chrome storage
+  function loadProtectionSettings() {
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+        chrome.storage.sync.get('fingerprintifySettings', (result) => {
+          if (result.fingerprintifySettings) {
+            // Update settings
+            Object.assign(protectionSettings, result.fingerprintifySettings);
+            window._fingerprintifySettings = protectionSettings;
+            console.log('🛡️ Settings updated from storage:', protectionSettings);
+          }
+        });
+      }
+    } catch(e) {
+      console.log('🛡️ Could not load settings from storage:', e);
+    }
+  }
+  
+  // Function to update settings dynamically 
+  window.updateFingerprintifySettings = function(newSettings) {
+    Object.assign(protectionSettings, newSettings);
+    window._fingerprintifySettings = protectionSettings;
+    console.log('🛡️ Settings updated dynamically:', protectionSettings);
+    
+    // Note: Some protections require page reload to take effect
+    console.log('🛡️ Note: Navigator, Screen, WebGL protections require page reload');
+  };
+  
+  // Load settings on initialization
+  loadProtectionSettings();
   
 })();

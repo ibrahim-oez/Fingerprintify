@@ -5,13 +5,17 @@
   "description": "Robust anti-fingerprinting extension that randomizes browser fingerprints on every page load",
   
   "icons": {
+    "16": "icons/fingerprint-scan.png",
+    "32": "icons/fingerprint-scan.png",
+    "48": "icons/fingerprint-scan.png",
     "128": "icons/fingerprint-scan.png"
   },
   
   "permissions": [
     "storage",
     "tabs",
-    "declarativeNetRequest"
+    "declarativeNetRequest",
+    "downloads"
   ],
   
   "host_permissions": [
@@ -50,7 +54,7 @@
   ],
   
   "action": {
-    "default_popup": "popup/popup-simple.html",
+    "default_popup": "popup/popup.html",
     "default_title": "Fingerprintify Settings",
     "default_icon": "icons/fingerprint-scan.png"
   }
