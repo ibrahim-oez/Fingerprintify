@@ -4,6 +4,36 @@
   
   console.log('🛡️ Fingerprintify: Enhanced content script loaded');
   
+  // Load and inject settings into main world BEFORE inject script runs
+  function preloadSettings() {
+    chrome.storage.sync.get('fingerprintifySettings', (result) => {
+      const settings = result.fingerprintifySettings || {
+        navigator: false,  // Safe defaults
+        screen: false,
+        webgl: false,
+        canvas: false,
+        audio: false,
+        fonts: false,
+        webrtc: false,
+        tracking: false
+      };
+      
+      console.log('🛡️ Preloading settings:', settings);
+      
+      // Inject settings IMMEDIATELY into main world
+      const script = document.createElement('script');
+      script.textContent = `
+        window._fingerprintifyPreloadedSettings = ${JSON.stringify(settings)};
+        console.log('🛡️ Settings preloaded for inject script:', window._fingerprintifyPreloadedSettings);
+      `;
+      (document.head || document.documentElement).appendChild(script);
+      script.remove();
+    });
+  }
+  
+  // CRITICAL: Preload settings IMMEDIATELY
+  preloadSettings();
+  
   // Extended protection status check with detailed reporting
   function checkProtectionStatus() {
     const status = {
@@ -211,15 +241,23 @@
               break;
               
             case 'updateSettings':
-              // Update settings in inject script
-              if (request.settings && window.updateFingerprintifySettings) {
-                window.updateFingerprintifySettings(request.settings);
-                console.log('⚙️ Settings updated:', request.settings);
+              // Save settings to storage first
+              chrome.storage.sync.set({ fingerprintifySettings: request.settings }, () => {
+                console.log('⚙️ Settings saved to storage:', request.settings);
+                
+                // Then inject into main world
+                const script = document.createElement('script');
+                script.textContent = `
+                  if (window.updateFingerprintifySettings) {
+                    window.updateFingerprintifySettings(${JSON.stringify(request.settings)});
+                    console.log('🛡️ Settings updated in main world:', ${JSON.stringify(request.settings)});
+                  }
+                `;
+                (document.head || document.documentElement).appendChild(script);
+                script.remove();
+                
                 sendResponse({ success: true });
-              } else {
-                console.warn('⚠️ Could not update settings - function not available');
-                sendResponse({ success: false, error: 'Settings update function not available' });
-              }
+              });
               break;
               
             default:

@@ -9,16 +9,16 @@ document.addEventListener('DOMContentLoaded', function() {
   const exportBtn = document.getElementById('exportBtn');
   const resetBtn = document.getElementById('resetBtn');
   
-  // Default settings
+  // Default settings (SAFE defaults - all OFF)
   const defaultSettings = {
-    navigator: true,
-    screen: true,
-    webgl: true,
-    canvas: true,
-    audio: true,
-    fonts: true,
-    webrtc: true,
-    tracking: true
+    navigator: false,
+    screen: false,
+    webgl: false,
+    canvas: false,
+    audio: false,
+    fonts: false,
+    webrtc: false,
+    tracking: false
   };
   
   let currentSettings = { ...defaultSettings };

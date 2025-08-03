@@ -4,17 +4,23 @@
   
   console.log('🛡️ Fingerprintify: ULTIMATE+ULTRA protection starting...');
   
-  // Protection settings (will be updated from storage)
+  // Protection settings (will be updated from storage via content script)
   let protectionSettings = {
-    navigator: true,
-    screen: true,
-    webgl: true,
-    canvas: true,
-    audio: true,
-    fonts: true,
-    webrtc: true,
-    tracking: true
+    navigator: false,  // Default to FALSE to prevent blocking
+    screen: false,
+    webgl: false,
+    canvas: false,
+    audio: false,
+    fonts: false,
+    webrtc: false,     // Default WebRTC to FALSE 
+    tracking: false
   };
+  
+  // Check if settings were pre-injected by content script
+  if (window._fingerprintifyPreloadedSettings) {
+    protectionSettings = { ...protectionSettings, ...window._fingerprintifyPreloadedSettings };
+    console.log('🛡️ Using preloaded settings:', protectionSettings);
+  }
   
   // Set protection flags
   window._fingerprintifyActive = true;
@@ -473,30 +479,20 @@
   console.log('🛡️ Platform:', fakeNav.platform);
   console.log('🛡️ Hardware Cores:', fakeNav.hardwareConcurrency);
   console.log('🛡️ Device Memory:', fakeNav.deviceMemory + 'GB');
-  console.log('🛡️ Screen:', (protectionSettings.screen ? chosenRes.width + 'x' + chosenRes.height + 'x' + fakeColorDepth : 'original'));
-  console.log('🛡️ WebGL Vendor:', (protectionSettings.webgl ? fakeWebGLInfo.vendor : 'original'));
-  console.log('🛡️ WebGL Renderer:', (protectionSettings.webgl ? fakeWebGLInfo.renderer : 'original'));
+  console.log('🛡️ Screen:', (protectionSettings.screen ? chosenRes.width + 'x' + chosenRes.height + 'x' + fakeColorDepth : 'DISABLED - original values'));
+  console.log('🛡️ WebGL Vendor:', (protectionSettings.webgl ? fakeWebGLInfo.vendor : 'DISABLED - original values'));
+  console.log('🛡️ WebGL Renderer:', (protectionSettings.webgl ? fakeWebGLInfo.renderer : 'DISABLED - original values'));
   console.log('🛡️ Timezone:', chosenTimezone);
-  console.log('🛡️ Canvas/WebGL/Audio fingerprints:', (protectionSettings.canvas && protectionSettings.webgl && protectionSettings.audio ? 'randomized' : 'conditional'));
-  console.log('🛡️ WebRTC:', (protectionSettings.webrtc ? 'blocked' : 'allowed'));
-  console.log('🛡️ Protection Settings:', protectionSettings);
+  console.log('🛡️ Canvas Protection:', (protectionSettings.canvas ? 'ENABLED' : 'DISABLED'));
+  console.log('🛡️ Audio Protection:', (protectionSettings.audio ? 'ENABLED' : 'DISABLED'));
+  console.log('🛡️ WebRTC Blocking:', (protectionSettings.webrtc ? 'ENABLED' : 'DISABLED'));
+  console.log('🛡️ Navigator Spoofing:', (protectionSettings.navigator ? 'ENABLED' : 'DISABLED'));
+  console.log('🛡️ Final Protection Settings:', protectionSettings);
   
-  // Function to load settings from Chrome storage
+  // Function to load settings from Chrome storage (via content script message)
   function loadProtectionSettings() {
-    try {
-      if (typeof chrome !== 'undefined' && chrome.storage) {
-        chrome.storage.sync.get('fingerprintifySettings', (result) => {
-          if (result.fingerprintifySettings) {
-            // Update settings
-            Object.assign(protectionSettings, result.fingerprintifySettings);
-            window._fingerprintifySettings = protectionSettings;
-            console.log('🛡️ Settings updated from storage:', protectionSettings);
-          }
-        });
-      }
-    } catch(e) {
-      console.log('🛡️ Could not load settings from storage:', e);
-    }
+    // Settings will be injected by content script
+    console.log('🛡️ Waiting for settings from content script...');
   }
   
   // Function to update settings dynamically 
@@ -507,6 +503,9 @@
     
     // Note: Some protections require page reload to take effect
     console.log('🛡️ Note: Navigator, Screen, WebGL protections require page reload');
+    
+    // Store settings globally for detection
+    window._fingerprintifySettingsActive = protectionSettings;
   };
   
   // Load settings on initialization
