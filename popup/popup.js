@@ -9,16 +9,16 @@ document.addEventListener('DOMContentLoaded', function() {
   const exportBtn = document.getElementById('exportBtn');
   const resetBtn = document.getElementById('resetBtn');
   
-  // Default settings (SAFE defaults - all OFF)
+  // Default settings (DEVELOPMENT defaults - mostly ON for testing)
   const defaultSettings = {
-    navigator: false,
-    screen: false,
-    webgl: false,
-    canvas: false,
-    audio: false,
-    fonts: false,
-    webrtc: false,
-    tracking: false
+    navigator: true,   // ON by default for testing
+    screen: true,      // ON by default for testing  
+    webgl: true,       // ON by default for testing
+    canvas: true,      // ON by default for testing
+    audio: true,       // ON by default for testing
+    fonts: false,      // Not implemented yet
+    webrtc: true,      // ON by default for testing
+    tracking: false    // Not implemented yet
   };
   
   let currentSettings = { ...defaultSettings };
@@ -167,7 +167,43 @@ document.addEventListener('DOMContentLoaded', function() {
   // Update main status display
   function updateStatusDisplay(status) {
     if (statusElement) {
-      const activeCount = Object.values(status).filter(v => v === true).length;
+      console.log('🛡️ Popup: Updating main status display with:', status);
+      
+      // Count truly active protections by checking for spoofed values
+      let activeCount = 0;
+      
+      // Navigator active if platform is spoofed
+      if (status.navigator?.platform && (
+        status.navigator.platform.includes('Quantum') || 
+        status.navigator.platform.includes('Holo') || 
+        status.navigator.platform.includes('Cyber') ||
+        status.navigator.platform.includes('Meta') ||
+        status.navigator.platform.includes('Ultra')
+      )) {
+        activeCount++;
+      }
+      
+      // Screen active if width exists
+      if (status.screen?.width) {
+        activeCount++;
+      }
+      
+      // WebGL active if vendor is spoofed
+      if (status.webgl?.vendor && (
+        status.webgl.vendor.includes('Quantum') || 
+        status.webgl.vendor.includes('Hyper') || 
+        status.webgl.vendor.includes('Cyber') ||
+        status.webgl.vendor.includes('Meta') ||
+        status.webgl.vendor.includes('Neural')
+      )) {
+        activeCount++;
+      }
+      
+      // Add other protections
+      if (status.canvas) activeCount++;
+      if (status.webrtc) activeCount++;
+      if (status.active) activeCount++; // Audio assumed active if others work
+      
       statusElement.innerHTML = `
         <div>✅ Protection Active</div>
         <div style="font-size: 11px; margin-top: 4px;">
@@ -175,43 +211,66 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       `;
       statusElement.className = 'status status-active';
+      
+      console.log(`🛡️ Popup: Status display updated - ${activeCount} active components`);
     }
   }
   
   // Update status grid
   function updateStatusGrid(status) {
+    console.log('🛡️ Popup: Updating status grid with:', status);
+    
     const statusMap = {
-      navigatorStatus: status.navigator?.platform ? '✅' : '❌',
+      navigatorStatus: status.navigator?.platform && status.navigator.platform.includes('Quantum') ? '✅' : '❌',
       screenStatus: status.screen?.width ? '✅' : '❌',
-      webglStatus: status.webgl?.vendor ? '✅' : '❌',
+      webglStatus: status.webgl?.vendor && (status.webgl.vendor.includes('Quantum') || status.webgl.vendor.includes('Hyper') || status.webgl.vendor.includes('Cyber')) ? '✅' : '❌',
       canvasStatus: status.canvas ? '✅' : '❌',
       webrtcStatus: status.webrtc ? '✅' : '❌',
-      audioStatus: '✅' // Assume active if other protections work
+      audioStatus: status.active ? '✅' : '❌' // Show based on overall activity
     };
+    
+    console.log('🛡️ Popup: Status mapping:', statusMap);
     
     Object.entries(statusMap).forEach(([id, value]) => {
       const element = document.getElementById(id);
       if (element) {
         element.textContent = value;
+        console.log(`🛡️ Popup: Set ${id} to ${value}`);
+      } else {
+        console.warn(`⚠️ Popup: Element ${id} not found`);
       }
     });
   }
   
   // Update fingerprint info tab
   function updateFingerprintInfo() {
-    if (!currentStatus) return;
+    if (!currentStatus) {
+      console.log('⚠️ Popup: No current status for fingerprint info');
+      return;
+    }
+    
+    console.log('🛡️ Popup: Updating fingerprint info with:', currentStatus);
     
     const elements = {
-      currentPlatform: currentStatus.navigator?.platform || '-',
-      currentHardware: `${currentStatus.navigator?.hardwareConcurrency || '-'} cores, ${currentStatus.navigator?.deviceMemory || '-'}GB`,
-      currentScreen: currentStatus.screen ? `${currentStatus.screen.width}x${currentStatus.screen.height}` : '-',
-      currentSession: currentStatus.session || '-'
+      currentPlatform: currentStatus.navigator?.platform || 'Original',
+      currentHardware: currentStatus.navigator?.hardwareConcurrency ? 
+        `${currentStatus.navigator.hardwareConcurrency} cores, ${currentStatus.navigator?.deviceMemory || '?'}GB` : 
+        'Original',
+      currentScreen: currentStatus.screen ? 
+        `${currentStatus.screen.width}x${currentStatus.screen.height}@${currentStatus.screen.colorDepth}bit` : 
+        'Original',
+      currentSession: currentStatus.session || 'No Session'
     };
+    
+    console.log('🛡️ Popup: Info elements:', elements);
     
     Object.entries(elements).forEach(([id, value]) => {
       const element = document.getElementById(id);
       if (element) {
         element.textContent = value;
+        console.log(`🛡️ Popup: Set ${id} to ${value}`);
+      } else {
+        console.warn(`⚠️ Popup: Element ${id} not found`);
       }
     });
   }

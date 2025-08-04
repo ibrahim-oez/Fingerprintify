@@ -6,28 +6,28 @@
   
   // Load and inject settings into main world BEFORE inject script runs
   function preloadSettings() {
+    // Set settings in DOM IMMEDIATELY and SYNCHRONOUSLY
+    
+    // Try to get settings synchronously from background script
     chrome.storage.sync.get('fingerprintifySettings', (result) => {
       const settings = result.fingerprintifySettings || {
-        navigator: false,  // Safe defaults
-        screen: false,
-        webgl: false,
-        canvas: false,
-        audio: false,
-        fonts: false,
-        webrtc: false,
-        tracking: false
+        navigator: true,  // Default to ON for testing
+        screen: true,     // Default to ON for testing
+        webgl: true,      // Default to ON for testing
+        canvas: true,     // Default to ON for testing
+        audio: true,      // Default to ON for testing
+        fonts: false,     // Not implemented
+        webrtc: true,     // Default to ON for testing
+        tracking: false   // Not implemented
       };
       
       console.log('🛡️ Preloading settings:', settings);
       
-      // Inject settings IMMEDIATELY into main world
-      const script = document.createElement('script');
-      script.textContent = `
-        window._fingerprintifyPreloadedSettings = ${JSON.stringify(settings)};
-        console.log('🛡️ Settings preloaded for inject script:', window._fingerprintifyPreloadedSettings);
-      `;
-      (document.head || document.documentElement).appendChild(script);
-      script.remove();
+      // Set in DOM immediately
+      document.documentElement.setAttribute('data-fingerprintify-settings', JSON.stringify(settings));
+      
+      // Also set as window variable for immediate access
+      window._fingerprintifyPreloadedSettings = settings;
     });
   }
   
@@ -38,26 +38,18 @@
   function updateSettingsLater() {
     chrome.storage.sync.get('fingerprintifySettings', (result) => {
       const settings = result.fingerprintifySettings || {
-        navigator: false,
-        screen: false,
-        webgl: false,
-        canvas: false,
-        audio: false,
-        fonts: false,
-        webrtc: false,
-        tracking: false
+        navigator: true,  // Default to ON for testing
+        screen: true,     // Default to ON for testing
+        webgl: true,      // Default to ON for testing
+        canvas: true,     // Default to ON for testing
+        audio: true,      // Default to ON for testing
+        fonts: false,     // Not implemented
+        webrtc: true,     // Default to ON for testing
+        tracking: false   // Not implemented
       };
       
-      // Inject settings into main world
-      const script = document.createElement('script');
-      script.textContent = `
-        if (window.updateFingerprintifySettings) {
-          window.updateFingerprintifySettings(${JSON.stringify(settings)});
-          console.log('🛡️ Settings updated later:', ${JSON.stringify(settings)});
-        }
-      `;
-      (document.head || document.documentElement).appendChild(script);
-      script.remove();
+      // Update settings in DOM attribute (CSP safe)
+      document.documentElement.setAttribute('data-fingerprintify-settings', JSON.stringify(settings));
     });
   }
   
@@ -67,7 +59,7 @@
   setTimeout(updateSettingsLater, 1000);
   
   // Extended protection status check with detailed reporting
-  function checkProtectionStatus() {
+  async function checkProtectionStatus() {
     const status = {
       active: false,
       session: null,
@@ -82,38 +74,137 @@
     };
     
     // Check basic protection flags
-    // Since inject script runs in MAIN world, we need to check via DOM
+    // Inject script to get status from MAIN world
     let isActive = false;
+    let mainWorldStatus = null;
+    
     try {
-      // Try to access the main world variables
-      isActive = window.wrappedJSObject?._fingerprintifyActive || 
-                 (typeof unsafeWindow !== 'undefined' && unsafeWindow._fingerprintifyActive);
+      // CSP-safe method: Use DOM events for communication
+      let statusReceived = false;
       
-      // Alternative check: Look for evidence of spoofing
-      if (!isActive) {
-        const spoofedUserAgents = ['QuantumOS', 'HoloWindows', 'CyberMac', 'UltraLinux', 'NeoAndroid'];
+      // Listen for status from MAIN world
+      const handleStatusMessage = (event) => {
+        if (event.detail && event.detail.type === 'fingerprintify-status') {
+          mainWorldStatus = event.detail.data;
+          isActive = mainWorldStatus.active;
+          statusReceived = true;
+          document.removeEventListener('fingerprintify-status-response', handleStatusMessage);
+        }
+      };
+      
+      document.addEventListener('fingerprintify-status-response', handleStatusMessage);
+      
+      // Request status from MAIN world using CustomEvent
+      const requestEvent = new CustomEvent('fingerprintify-status-request', {
+        detail: { timestamp: Date.now() }
+      });
+      document.dispatchEvent(requestEvent);
+      
+      // Wait a bit for response
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Fallback: Look for evidence of spoofing in the current context
+      if (!statusReceived || !isActive) {
+        const spoofedUserAgents = ['QuantumOS', 'HoloWindows', 'CyberMac', 'UltraLinux', 'NeoAndroid', 'MetaWindows', 'HyperOS'];
         isActive = spoofedUserAgents.some(fake => navigator.userAgent.includes(fake));
+        
+        if (isActive) {
+          // If we detect spoofing, create a fake status
+          mainWorldStatus = {
+            active: true,
+            session: 'session_detected',
+            settings: { navigator: true, screen: true, webgl: true, canvas: true, audio: true, webrtc: true },
+            navigator: {
+              userAgent: navigator.userAgent,
+              platform: navigator.platform,
+              hardwareConcurrency: navigator.hardwareConcurrency,
+              deviceMemory: navigator.deviceMemory,
+              maxTouchPoints: navigator.maxTouchPoints,
+              language: navigator.language,
+              vendor: navigator.vendor
+            },
+            screen: {
+              width: screen.width,
+              height: screen.height,
+              colorDepth: screen.colorDepth,
+              pixelDepth: screen.pixelDepth
+            }
+          };
+        }
       }
       
       // Alternative check: Look for unrealistic hardware values
       if (!isActive && navigator.hardwareConcurrency) {
-        const unrealisticCores = [3, 5, 7, 9, 11, 13, 15, 17, 20, 24, 28, 32, 48, 64, 96, 128, 256, 512, 1024];
+        const unrealisticCores = [3, 5, 7, 9, 11, 13, 15, 17, 20, 24, 28, 32, 41, 48, 64, 96, 128, 256, 512, 1024];
         isActive = unrealisticCores.includes(navigator.hardwareConcurrency);
+        
+        if (isActive && !mainWorldStatus) {
+          mainWorldStatus = {
+            active: true,
+            session: 'session_detected',
+            settings: { navigator: true, screen: true, webgl: true, canvas: true, audio: true, webrtc: true },
+            navigator: {
+              userAgent: navigator.userAgent,
+              platform: navigator.platform,
+              hardwareConcurrency: navigator.hardwareConcurrency,
+              deviceMemory: navigator.deviceMemory,
+              maxTouchPoints: navigator.maxTouchPoints,
+              language: navigator.language,
+              vendor: navigator.vendor
+            },
+            screen: {
+              width: screen.width,
+              height: screen.height,
+              colorDepth: screen.colorDepth,
+              pixelDepth: screen.pixelDepth
+            }
+          };
+        }
       }
       
     } catch(e) {
+      console.log('🛡️ Status check error:', e);
       // Fallback: Check for evidence of protection
-      const spoofedUserAgents = ['QuantumOS', 'HoloWindows', 'CyberMac', 'UltraLinux', 'NeoAndroid'];
+      const spoofedUserAgents = ['QuantumOS', 'HoloWindows', 'CyberMac', 'UltraLinux', 'NeoAndroid', 'MetaWindows', 'HyperOS'];
       isActive = spoofedUserAgents.some(fake => navigator.userAgent.includes(fake));
+      
+      if (isActive) {
+        mainWorldStatus = {
+          active: true,
+          session: 'session_detected_fallback',
+          settings: { navigator: true, screen: true, webgl: true, canvas: true, audio: true, webrtc: true },
+          navigator: {
+            userAgent: navigator.userAgent,
+            platform: navigator.platform,
+            hardwareConcurrency: navigator.hardwareConcurrency,
+            deviceMemory: navigator.deviceMemory,
+            maxTouchPoints: navigator.maxTouchPoints,
+            language: navigator.language,
+            vendor: navigator.vendor
+          },
+          screen: {
+            width: screen.width,
+            height: screen.height,
+            colorDepth: screen.colorDepth,
+            pixelDepth: screen.pixelDepth
+          }
+        };
+      }
     }
     
     if (isActive) {
       status.active = true;
-      status.session = 'session_detected';
+      status.session = mainWorldStatus?.session || 'session_detected';
       status.profile = 'active';
-      status.settings = {};
+      status.settings = mainWorldStatus?.settings || {};
       console.log('✅ Fingerprintify: ULTIMATE protection is ACTIVE');
       console.log('🔒 Evidence: Spoofed values detected');
+      
+      // Use main world status if available
+      if (mainWorldStatus) {
+        status.navigator = mainWorldStatus.navigator;
+        status.screen = mainWorldStatus.screen;
+      }
     } else {
       console.warn('❌ Fingerprintify: Protection NOT detected!');
       return status;
@@ -180,7 +271,7 @@
         status.webgl = { vendor, renderer };
         
         // Check for spoofed values
-        const spoofedVendors = ['QuantumTech', 'HyperGraphics', 'CyberVision', 'MetaGraphics'];
+        const spoofedVendors = ['QuantumTech', 'HyperGraphics', 'CyberVision', 'MetaGraphics', 'NeuralProcessing', 'FutureGPU'];
         const isSpoofed = spoofedVendors.some(fake => vendor.includes(fake));
         
         if (isSpoofed) {
@@ -193,6 +284,7 @@
       }
     } catch (e) {
       console.log('✅ WebGL: Blocked or failed (good for privacy)');
+      status.webgl = { vendor: 'Blocked', renderer: 'Blocked' };
     }
     
     // Check Canvas fingerprint protection
@@ -238,8 +330,13 @@
     return status;
   }
   
+  // Global variable for storing protection status
+  let protectionStatus = null;
+  
   // Run initial check
-  let protectionStatus = checkProtectionStatus();
+  checkProtectionStatus().then(result => {
+    protectionStatus = result;
+  });
   
   // Enhanced message handling with settings support
   if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
@@ -251,10 +348,11 @@
           switch (request.action) {
             case 'getStatus':
               // Always return fresh status
-              const freshStatus = checkProtectionStatus();
-              sendResponse(freshStatus);
-              console.log('📊 Status sent to popup:', freshStatus.active ? 'ACTIVE' : 'INACTIVE');
-              break;
+              checkProtectionStatus().then(freshStatus => {
+                sendResponse(freshStatus);
+                console.log('📊 Status sent to popup:', freshStatus.active ? 'ACTIVE' : 'INACTIVE');
+              });
+              return true; // Keep message channel open for async response
               
             case 'regenerate':
               console.log('🔄 Regenerating fingerprint...');
@@ -267,32 +365,29 @@
               break;
               
             case 'checkDetails':
-              const detailedStatus = checkProtectionStatus();
-              sendResponse(detailedStatus);
-              console.log('📋 Detailed status sent');
-              break;
+              checkProtectionStatus().then(detailedStatus => {
+                sendResponse(detailedStatus);
+                console.log('📋 Detailed status sent');
+              });
+              return true; // Keep message channel open for async response
               
             case 'updateSettings':
               // Save settings to storage first
               chrome.storage.sync.set({ fingerprintifySettings: request.settings }, () => {
                 console.log('⚙️ Settings saved to storage:', request.settings);
                 
-                // Then inject into main world
-                const script = document.createElement('script');
-                script.textContent = `
-                  if (window.updateFingerprintifySettings) {
-                    window.updateFingerprintifySettings(${JSON.stringify(request.settings)});
-                    console.log('🛡️ Settings updated in main world:', ${JSON.stringify(request.settings)});
-                  }
-                `;
-                (document.head || document.documentElement).appendChild(script);
-                script.remove();
-                
-                sendResponse({ success: true });
+              // Then inject into main world using CSP-safe method
+              const updateEvent = new CustomEvent('fingerprintify-settings-update', {
+                detail: {
+                  type: 'settings-update',
+                  data: request.settings
+                }
               });
-              break;
+              document.dispatchEvent(updateEvent);
               
-            default:
+              sendResponse({ success: true });
+            });
+            return true; // Keep message channel open for async response            default:
               console.log('❓ Unknown action:', request.action);
               sendResponse({ error: 'Unknown action' });
           }
@@ -313,8 +408,8 @@
   }
   
   // Periodic status monitoring (every 30 seconds)
-  setInterval(() => {
-    const currentStatus = checkProtectionStatus();
+  setInterval(async () => {
+    const currentStatus = await checkProtectionStatus();
     if (currentStatus.active !== protectionStatus?.active) {
       console.log('🔄 Protection status changed:', currentStatus.active ? 'ACTIVATED' : 'DEACTIVATED');
       protectionStatus = currentStatus;
@@ -323,7 +418,7 @@
   
   // Export status for debugging
   window._fingerprintifyDebug = {
-    getStatus: checkProtectionStatus,
+    getStatus: async () => await checkProtectionStatus(),
     lastCheck: () => protectionStatus,
     version: '2.1.0'
   };

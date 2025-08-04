@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebRTC Debug Test</title>
+</head>
+<body>
+    <h1>WebRTC Leak Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        const results = document.getElementById('results');
+        
+        function addResult(text) {
+            results.innerHTML += '<p>' + text + '</p>';
+        }
+        
+        addResult('Testing WebRTC availability...');
+        
+        // Test WebRTC constructors
+        try {
+            if (typeof RTCPeerConnection !== 'undefined') {
+                addResult('❌ RTCPeerConnection is available');
+                try {
+                    const pc = new RTCPeerConnection();
+                    addResult('❌ RTCPeerConnection can be created');
+                } catch (e) {
+                    addResult('✅ RTCPeerConnection blocked: ' + e.message);
+                }
+            } else {
+                addResult('✅ RTCPeerConnection is undefined');
+            }
+        } catch (e) {
+            addResult('✅ RTCPeerConnection error: ' + e.message);
+        }
+        
+        try {
+            if (typeof webkitRTCPeerConnection !== 'undefined') {
+                addResult('❌ webkitRTCPeerConnection is available');
+            } else {
+                addResult('✅ webkitRTCPeerConnection is undefined');
+            }
+        } catch (e) {
+            addResult('✅ webkitRTCPeerConnection error: ' + e.message);
+        }
+        
+        // Test getUserMedia (WITHOUT actually requesting camera)
+        try {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                addResult('❌ getUserMedia is available - should be blocked');
+            } else {
+                addResult('✅ getUserMedia not available');
+            }
+        } catch (e) {
+            addResult('✅ getUserMedia error: ' + e.message);
+        }
+        
+        // Check protection settings
+        addResult('Protection Settings: ' + JSON.stringify(window._fingerprintifySettings || 'not available'));
+        addResult('Active: ' + (window._fingerprintifyActive || false));
+    </script>
+</body>
+</html>
