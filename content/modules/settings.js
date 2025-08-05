@@ -15,7 +15,11 @@ window.FingerprintifyModules.settings = {
     audio: true,       // Default ON for testing
     fonts: false,      // Not implemented yet
     webrtc: true,      // Default ON for testing
-    tracking: false    // Not implemented yet
+    tracking: false,   // Not implemented yet
+    battery: true,     // NEW: Battery API blocking
+    speech: true,      // NEW: Speech synthesis spoofing
+    stealth: true,     // NEW: Anti-detection
+    fingerprinting: true // NEW: Fingerprint tracking
   },
   
   currentSettings: null,

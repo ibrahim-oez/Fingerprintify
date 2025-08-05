@@ -15,7 +15,8 @@
     "storage",
     "tabs",
     "declarativeNetRequest",
-    "downloads"
+    "downloads",
+    "cookies"
   ],
   
   "host_permissions": [
@@ -56,6 +57,10 @@
         "content/modules/canvas.js",
         "content/modules/audio.js",
         "content/modules/webrtc.js",
+        "content/modules/battery.js",
+        "content/modules/speech.js",
+        "content/modules/stealth.js",
+        "content/modules/tracker.js",
         "content/inject-modular.js"
       ],
       "run_at": "document_start",

@@ -19,29 +19,51 @@ window.FingerprintifyModules.webgl = {
       window.FingerprintifyModules.logger.info('WebGL', 'Applying spoofing...');
     }
     
+    // REALISTISCHE GPU-Vendors - Echte Hersteller
     const vendors = [
-      'QuantumTech Inc.', 'HyperGraphics Corp.', 'NeuralProcessing Ltd.',
-      'CyberVision Systems', 'MetaGraphics Inc.', 'UltraRendering Co.',
-      'FutureGPU Corp.', 'HolographicTech', 'QuantumGraphics LLC'
+      'Intel Inc.',
+      'NVIDIA Corporation', 
+      'ATI Technologies Inc.',
+      'AMD',
+      'Apple Inc.',
+      'Qualcomm',
+      'Google Inc.'
     ];
     
+    // REALISTISCHE GPU-Renderer - Echte Grafikkarten mit leichten Variationen
     const renderers = [
-      'QuantumTech UltraGPU 9000X',
-      'HyperGraphics Neural RTX 50000',
-      'CyberVision HoloCard 8K Pro',
-      'MetaGraphics Quantum RTX 99999',
-      'Intel(R) Neural Graphics 2050',
-      'AMD Radeon Quantum RX 50000X',
-      'NVIDIA HyperForce RTX 90000 Ti',
-      'Apple M25 Ultra Neural Pro',
-      'FutureGPU QuantumCore 128GB'
+      // Intel iGPUs (sehr häufig)
+      'Intel(R) UHD Graphics 620',
+      'Intel(R) Iris(R) Xe Graphics',
+      'Intel(R) HD Graphics 630',
+      'Intel(R) UHD Graphics 730',
+      'Intel(R) Iris(R) Plus Graphics 640',
+      
+      // NVIDIA GPUs (häufig)
+      'NVIDIA GeForce GTX 1050',
+      'NVIDIA GeForce RTX 3060',
+      'NVIDIA GeForce GTX 1650',
+      'NVIDIA GeForce RTX 4060',
+      'NVIDIA GeForce GTX 1060',
+      'NVIDIA GeForce RTX 3070',
+      
+      // AMD GPUs (weniger häufig aber realistisch)
+      'AMD Radeon RX 580',
+      'AMD Radeon RX 6600',
+      'AMD Radeon RX 5500 XT',
+      'AMD Radeon(TM) Graphics',
+      
+      // Apple GPUs (für macOS)
+      'Apple M1',
+      'Apple M2',
+      'Apple GPU'
     ];
     
     const fakeWebGLInfo = {
       vendor: utils.randomChoice(vendors),
       renderer: utils.randomChoice(renderers),
-      version: utils.randomChoice(['WebGL 5.0', 'WebGL 9.9', 'QuantumGL 10.0', 'HyperWebGL 25.0']),
-      shadingLanguageVersion: utils.randomChoice(['WebGL GLSL ES 5.00', 'QuantumGLSL ES 10.0', 'NeuralGLSL ES 99.0'])
+      version: utils.randomChoice(['WebGL 1.0', 'WebGL 2.0']), // Nur echte WebGL-Versionen
+      shadingLanguageVersion: utils.randomChoice(['WebGL GLSL ES 1.0', 'WebGL GLSL ES 3.0']) // Nur echte GLSL-Versionen
     };
     
     // Override WebGL1 getParameter

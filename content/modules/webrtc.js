@@ -1,11 +1,11 @@
 // WebRTC Blocking Module
-// Prevents IP leaks through WebRTC connections
+// Enhanced blocking to prevent IP leaks and additional fingerprinting
 
 window.FingerprintifyModules = window.FingerprintifyModules || {};
 
 window.FingerprintifyModules.webrtc = {
   name: 'WebRTC Blocking',
-  description: 'Blocks WebRTC to prevent IP leaks',
+  description: 'Comprehensive WebRTC blocking to prevent IP leaks and fingerprinting',
   
   apply: function(protectionSettings) {
     if (!protectionSettings.webrtc) {
@@ -16,36 +16,50 @@ window.FingerprintifyModules.webrtc = {
     }
     
     if (window.FingerprintifyModules && window.FingerprintifyModules.logger) {
-      window.FingerprintifyModules.logger.info('WebRTC', 'Applying complete blocking...');
+      window.FingerprintifyModules.logger.info('WebRTC', 'Applying comprehensive blocking...');
     }
     
-    // Block RTCPeerConnection constructors
+    // Block all RTCPeerConnection constructors
+    const blockWebRTCConstructor = function() {
+      throw new Error('WebRTC blocked by Fingerprintify - IP protection active');
+    };
+    
+    // Block main constructors
     if (window.RTCPeerConnection) {
-      window.RTCPeerConnection = function() {
-        throw new Error('WebRTC blocked by Fingerprintify');
-      };
+      window.RTCPeerConnection = blockWebRTCConstructor;
       if (window.FingerprintifyModules && window.FingerprintifyModules.logger) {
         window.FingerprintifyModules.logger.success('WebRTC', 'RTCPeerConnection blocked');
       }
     }
     
     if (window.webkitRTCPeerConnection) {
-      window.webkitRTCPeerConnection = function() {
-        throw new Error('WebRTC blocked by Fingerprintify');
-      };
+      window.webkitRTCPeerConnection = blockWebRTCConstructor;
       if (window.FingerprintifyModules && window.FingerprintifyModules.logger) {
         window.FingerprintifyModules.logger.success('WebRTC', 'webkitRTCPeerConnection blocked');
       }
     }
     
     if (window.mozRTCPeerConnection) {
-      window.mozRTCPeerConnection = function() {
-        throw new Error('WebRTC blocked by Fingerprintify');
-      };
-      console.log('🛡️ WebRTC: mozRTCPeerConnection blocked');
+      window.mozRTCPeerConnection = blockWebRTCConstructor;
+      if (window.FingerprintifyModules && window.FingerprintifyModules.logger) {
+        window.FingerprintifyModules.logger.success('WebRTC', 'mozRTCPeerConnection blocked');
+      }
     }
     
-    // Block getUserMedia
+    // Block related constructors
+    if (window.RTCIceCandidate) {
+      window.RTCIceCandidate = blockWebRTCConstructor;
+    }
+    
+    if (window.RTCSessionDescription) {
+      window.RTCSessionDescription = blockWebRTCConstructor;
+    }
+    
+    if (window.RTCDataChannel) {
+      window.RTCDataChannel = blockWebRTCConstructor;
+    }
+    
+    // Block getUserMedia comprehensively
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       navigator.mediaDevices.getUserMedia = function() {
         return Promise.reject(new Error('Media access blocked by Fingerprintify'));

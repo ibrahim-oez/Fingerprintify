@@ -9,16 +9,20 @@ document.addEventListener('DOMContentLoaded', function() {
   const exportBtn = document.getElementById('exportBtn');
   const resetBtn = document.getElementById('resetBtn');
   
-  // Default settings (DEVELOPMENT defaults - mostly ON for testing)
+  // Default settings (should match settings.js)
   const defaultSettings = {
-    navigator: true,   // ON by default for testing
-    screen: true,      // ON by default for testing  
-    webgl: true,       // ON by default for testing
-    canvas: true,      // ON by default for testing
-    audio: true,       // ON by default for testing
-    fonts: false,      // Not implemented yet
-    webrtc: true,      // ON by default for testing
-    tracking: false    // Not implemented yet
+    navigator: true,
+    screen: true,
+    webgl: true,
+    canvas: true,
+    audio: true,
+    fonts: false,
+    webrtc: true,
+    tracking: false,
+    battery: true,
+    speech: true,
+    stealth: true,
+    fingerprinting: true
   };
   
   let currentSettings = { ...defaultSettings };
@@ -79,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Show feedback
       const originalText = saveSettingsBtn.textContent;
-      saveSettingsBtn.textContent = '✅ Saved!';
+      saveSettingsBtn.textContent = 'ON Saved!';
       saveSettingsBtn.style.background = '#10B981';
       
       setTimeout(() => {
@@ -139,23 +143,25 @@ document.addEventListener('DOMContentLoaded', function() {
           return;
         }
         
-        // Get detailed status from content script
-        chrome.tabs.sendMessage(tabs[0].id, { action: 'checkDetails' }, (response) => {
+        // Use new communication system
+        chrome.tabs.sendMessage(tabs[0].id, { action: 'getStatus' }, (response) => {
           if (chrome.runtime.lastError) {
             if (statusElement) {
               statusElement.innerHTML = '<div>🔄 Loading protection...</div>';
               statusElement.className = 'status status-unknown';
             }
+            console.log('⚠️ Popup: Communication error:', chrome.runtime.lastError);
             return;
           }
           
-          if (response && response.active) {
-            currentStatus = response;
-            updateStatusDisplay(response);
-            updateStatusGrid(response);
+          if (response && response.success && response.data) {
+            currentStatus = response.data;
+            updateStatusDisplay(response.data);
+            updateStatusGrid(response.data);
+            updateFingerprintInfo(response.data);
           } else {
             if (statusElement) {
-              statusElement.innerHTML = '<div>❌ Protection inactive</div>';
+              statusElement.innerHTML = '<div>OFF Protection inactive</div>';
               statusElement.className = 'status status-inactive';
             }
           }
@@ -169,43 +175,25 @@ document.addEventListener('DOMContentLoaded', function() {
     if (statusElement) {
       console.log('🛡️ Popup: Updating main status display with:', status);
       
-      // Count truly active protections by checking for spoofed values
+      // Count active protections based on settings rather than fake detection
       let activeCount = 0;
       
-      // Navigator active if platform is spoofed
-      if (status.navigator?.platform && (
-        status.navigator.platform.includes('Quantum') || 
-        status.navigator.platform.includes('Holo') || 
-        status.navigator.platform.includes('Cyber') ||
-        status.navigator.platform.includes('Meta') ||
-        status.navigator.platform.includes('Ultra')
-      )) {
-        activeCount++;
-      }
+      // Use the settings to determine active protections
+      const protectionModules = ['navigator', 'screen', 'webgl', 'canvas', 'webrtc', 'audio', 'battery', 'speech', 'stealth', 'fingerprinting'];
       
-      // Screen active if width exists
-      if (status.screen?.width) {
-        activeCount++;
-      }
+      protectionModules.forEach(module => {
+        if (status.settings && status.settings[module] !== false) {
+          activeCount++;
+        }
+      });
       
-      // WebGL active if vendor is spoofed
-      if (status.webgl?.vendor && (
-        status.webgl.vendor.includes('Quantum') || 
-        status.webgl.vendor.includes('Hyper') || 
-        status.webgl.vendor.includes('Cyber') ||
-        status.webgl.vendor.includes('Meta') ||
-        status.webgl.vendor.includes('Neural')
-      )) {
-        activeCount++;
+      // If no settings available, fall back to checking if protection is generally active
+      if (!status.settings && status.active) {
+        activeCount = 6; // Assume core protections are active
       }
-      
-      // Add other protections
-      if (status.canvas) activeCount++;
-      if (status.webrtc) activeCount++;
-      if (status.active) activeCount++; // Audio assumed active if others work
       
       statusElement.innerHTML = `
-        <div>✅ Protection Active</div>
+        <div>ON Protection Active</div>
         <div style="font-size: 11px; margin-top: 4px;">
           ${activeCount} components protected
         </div>
@@ -220,13 +208,18 @@ document.addEventListener('DOMContentLoaded', function() {
   function updateStatusGrid(status) {
     console.log('🛡️ Popup: Updating status grid with:', status);
     
+    // New status mapping for all protection modules
     const statusMap = {
-      navigatorStatus: status.navigator?.platform && status.navigator.platform.includes('Quantum') ? '✅' : '❌',
-      screenStatus: status.screen?.width ? '✅' : '❌',
-      webglStatus: status.webgl?.vendor && (status.webgl.vendor.includes('Quantum') || status.webgl.vendor.includes('Hyper') || status.webgl.vendor.includes('Cyber')) ? '✅' : '❌',
-      canvasStatus: status.canvas ? '✅' : '❌',
-      webrtcStatus: status.webrtc ? '✅' : '❌',
-      audioStatus: status.active ? '✅' : '❌' // Show based on overall activity
+      navigatorStatus: status.settings?.navigator !== false ? 'ON' : 'OFF',
+      screenStatus: status.settings?.screen !== false ? 'ON' : 'OFF', 
+      webglStatus: status.settings?.webgl !== false ? 'ON' : 'OFF',
+      canvasStatus: status.settings?.canvas !== false ? 'ON' : 'OFF',
+      webrtcStatus: status.settings?.webrtc !== false ? 'ON' : 'OFF',
+      audioStatus: status.settings?.audio !== false ? 'ON' : 'OFF',
+      batteryStatus: status.settings?.battery !== false ? 'ON' : 'OFF',
+      speechStatus: status.settings?.speech !== false ? 'ON' : 'OFF',
+      stealthStatus: status.settings?.stealth !== false ? 'ON' : 'OFF',
+      trackingStatus: status.settings?.fingerprinting !== false ? 'ON' : 'OFF'
     };
     
     console.log('🛡️ Popup: Status mapping:', statusMap);
@@ -301,7 +294,8 @@ document.addEventListener('DOMContentLoaded', function() {
           
           setTimeout(() => {
             window.close();
-          }, 100);
+            location.reload();
+          }, 100); 
         }
       });
     });

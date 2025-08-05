@@ -19,30 +19,36 @@ window.FingerprintifyModules.screen = {
       window.FingerprintifyModules.logger.info('Screen', 'Applying spoofing...');
     }
     
-    // SEMI-REALISTISCHE Auflösungen - Ungewöhnlich aber nicht unmöglich
+    // REALISTISCHE Auflösungen - Echte Monitor-Auflösungen
     const spoofedResolutions = [
-      { width: 1920, height: 1080 },    // Standard aber häufig
-      { width: 2560, height: 1440 },    // Standard QHD
-      { width: 3440, height: 1440 },    // Ultrawide
-      { width: 2560, height: 1600 },    // 16:10 Format
-      { width: 1366, height: 768 },     // Alte Laptops
-      { width: 1440, height: 900 },     // Ungewöhnlich aber real
-      { width: 2048, height: 1152 },    // Seltene Auflösung
-      { width: 2304, height: 1440 },    // MacBook Pro Retina
-      { width: 1680, height: 1050 },    // Alte Monitore
-      { width: 1600, height: 900 },     // 16:9 aber ungewöhnlich
-      { width: 1536, height: 864 }      // 125% Skalierung
+      // Standard-Auflösungen (häufig)
+      { width: 1920, height: 1080 },    // Full HD (sehr häufig)
+      { width: 1366, height: 768 },     // Alte Laptops (sehr häufig)
+      { width: 2560, height: 1440 },    // QHD (häufig)
+      { width: 1536, height: 864 },     // 125% Windows Scaling
+      { width: 1440, height: 900 },     // 16:10 Laptops
+      
+      // Weniger häufige aber realistische Auflösungen
+      { width: 1680, height: 1050 },    // Alte 20" Monitore
+      { width: 2048, height: 1152 },    // Seltene aber echte Auflösung
+      { width: 1600, height: 900 },     // 16:9 aber seltener
+      { width: 2560, height: 1600 },    // 16:10 QHD
+      { width: 3840, height: 2160 },    // 4K (seltener aber real)
+      
+      // Ultrawide Monitore (real aber auffälliger)
+      { width: 3440, height: 1440 },    // 21:9 Ultrawide
+      { width: 2560, height: 1080 }     // 21:9 FHD Ultrawide
     ];
     
     const chosenRes = utils.randomChoice(spoofedResolutions);
-    const fakeColorDepth = [24, 32][utils.randomInt(0, 1)]; // Nur realistische Werte
+    const fakeColorDepth = 24; // Immer 24-bit (Standard und realistisch)
     
     try {
       Object.defineProperties(window.screen, {
         width: { get: () => chosenRes.width, configurable: false },
         height: { get: () => chosenRes.height, configurable: false },
-        availWidth: { get: () => chosenRes.width - utils.randomInt(0, 100), configurable: false },
-        availHeight: { get: () => chosenRes.height - utils.randomInt(0, 100), configurable: false },
+        availWidth: { get: () => chosenRes.width - utils.randomInt(0, 50), configurable: false }, // Realistische Taskbar-Abzüge
+        availHeight: { get: () => chosenRes.height - utils.randomInt(30, 80), configurable: false }, // Realistische Taskbar-Abzüge
         colorDepth: { get: () => fakeColorDepth, configurable: false },
         pixelDepth: { get: () => fakeColorDepth, configurable: false }
       });

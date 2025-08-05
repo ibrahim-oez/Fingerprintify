@@ -1,4 +1,4 @@
-// Enhanced Content Script for Fingerprintify with Settings Support
+// Enhanced Content Script for Fingerprintify with Settings Support and Popup Communication
 (function() {
   'use strict';
   
@@ -11,14 +11,18 @@
     // Try to get settings synchronously from background script
     chrome.storage.sync.get('fingerprintifySettings', (result) => {
       const settings = result.fingerprintifySettings || {
-        navigator: true,  // Default to ON for testing
-        screen: true,     // Default to ON for testing
-        webgl: true,      // Default to ON for testing
-        canvas: true,     // Default to ON for testing
-        audio: true,      // Default to ON for testing
-        fonts: false,     // Not implemented
-        webrtc: true,     // Default to ON for testing
-        tracking: false   // Not implemented
+        navigator: true,
+        screen: true,
+        webgl: true,
+        canvas: true,
+        audio: true,
+        fonts: false,
+        webrtc: true,
+        tracking: false,
+        battery: true,
+        speech: true,
+        stealth: true,
+        fingerprinting: true
       };
       
       console.log('🛡️ Preloading settings:', settings);
@@ -33,6 +37,56 @@
   
   // CRITICAL: Preload settings IMMEDIATELY
   preloadSettings();
+  
+  // Popup Communication Bridge
+  function setupPopupCommunication() {
+    // Listen for messages from popup
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      if (request.action === 'getStatus') {
+        // Request status from main world
+        const statusEvent = new CustomEvent('fingerprintify-status-request', {
+          detail: { type: 'status-request' }
+        });
+        document.dispatchEvent(statusEvent);
+        
+        // Wait for response and forward to popup
+        document.addEventListener('fingerprintify-status-response', function(event) {
+          if (event.detail && event.detail.type === 'fingerprintify-status') {
+            sendResponse({
+              success: true,
+              data: event.detail.data
+            });
+          }
+        }, { once: true });
+        
+        return true; // Keep message channel open for async response
+      }
+      
+      if (request.action === 'updateSettings') {
+        // Save settings and notify main world
+        chrome.storage.sync.set({ 'fingerprintifySettings': request.settings }, () => {
+          // Update DOM attribute
+          document.documentElement.setAttribute('data-fingerprintify-settings', JSON.stringify(request.settings));
+          
+          // Dispatch settings update event to main world
+          const updateEvent = new CustomEvent('fingerprintify-settings-update', {
+            detail: {
+              type: 'settings-update',
+              data: request.settings
+            }
+          });
+          document.dispatchEvent(updateEvent);
+          
+          sendResponse({ success: true });
+        });
+        
+        return true;
+      }
+    });
+  }
+  
+  // Setup communication bridge
+  setupPopupCommunication();
   
   // Also inject settings later for scripts that load after us
   function updateSettingsLater() {
@@ -105,14 +159,32 @@
       
       // Fallback: Look for evidence of spoofing in the current context
       if (!statusReceived || !isActive) {
-        const spoofedUserAgents = ['QuantumOS', 'HoloWindows', 'CyberMac', 'UltraLinux', 'NeoAndroid', 'MetaWindows', 'HyperOS'];
-        isActive = spoofedUserAgents.some(fake => navigator.userAgent.includes(fake));
+        // Look for realistic but uncommon values that indicate spoofing
+        const uncommonButRealistic = [
+          // Uncommon but real resolutions
+          (screen.width === 2048 && screen.height === 1152),
+          (screen.width === 3440 && screen.height === 1440),
+          (screen.width === 2560 && screen.height === 1080),
+          
+          // Uncommon CPU core counts (but realistic)
+          [20, 24, 32].includes(navigator.hardwareConcurrency),
+          
+          // Check for non-standard user agents (but realistic ones)
+          navigator.userAgent.includes('Edg/') && !navigator.userAgent.includes('Edge/'),
+          
+          // Check if screen dimensions don't match common ratios exactly
+          Math.abs((screen.width / screen.height) - (16/9)) > 0.1 && 
+          Math.abs((screen.width / screen.height) - (16/10)) > 0.1 &&
+          Math.abs((screen.width / screen.height) - (4/3)) > 0.1
+        ];
+        
+        isActive = uncommonButRealistic.some(condition => condition);
         
         if (isActive) {
-          // If we detect spoofing, create a fake status
+          // If we detect subtle spoofing, create a status
           mainWorldStatus = {
             active: true,
-            session: 'session_detected',
+            session: 'session_detected_realistic',
             settings: { navigator: true, screen: true, webgl: true, canvas: true, audio: true, webrtc: true },
             navigator: {
               userAgent: navigator.userAgent,
@@ -133,15 +205,18 @@
         }
       }
       
-      // Alternative check: Look for unrealistic hardware values
+      // Alternative check: Look for subtle but realistic spoofing indicators  
       if (!isActive && navigator.hardwareConcurrency) {
-        const unrealisticCores = [3, 5, 7, 9, 11, 13, 15, 17, 20, 24, 28, 32, 41, 48, 64, 96, 128, 256, 512, 1024];
-        isActive = unrealisticCores.includes(navigator.hardwareConcurrency);
+        // Look for less common but realistic hardware values
+        const uncommonCores = [20, 24, 32]; // High-end but realistic
+        const uncommonRAM = navigator.deviceMemory && [2, 32].includes(navigator.deviceMemory); // Very low or very high
+        
+        isActive = uncommonCores.includes(navigator.hardwareConcurrency) || uncommonRAM;
         
         if (isActive && !mainWorldStatus) {
           mainWorldStatus = {
             active: true,
-            session: 'session_detected',
+            session: 'session_detected_hardware',
             settings: { navigator: true, screen: true, webgl: true, canvas: true, audio: true, webrtc: true },
             navigator: {
               userAgent: navigator.userAgent,
@@ -164,14 +239,18 @@
       
     } catch(e) {
       console.log('🛡️ Status check error:', e);
-      // Fallback: Check for evidence of protection
-      const spoofedUserAgents = ['QuantumOS', 'HoloWindows', 'CyberMac', 'UltraLinux', 'NeoAndroid', 'MetaWindows', 'HyperOS'];
-      isActive = spoofedUserAgents.some(fake => navigator.userAgent.includes(fake));
+      // Fallback: Check for evidence of realistic protection
+      const uncommonButRealistic = [
+        (screen.width === 2048 && screen.height === 1152),
+        (screen.width === 3440 && screen.height === 1440),
+        [20, 24, 32].includes(navigator.hardwareConcurrency)
+      ];
+      isActive = uncommonButRealistic.some(condition => condition);
       
       if (isActive) {
         mainWorldStatus = {
           active: true,
-          session: 'session_detected_fallback',
+          session: 'session_detected_fallback_realistic',
           settings: { navigator: true, screen: true, webgl: true, canvas: true, audio: true, webrtc: true },
           navigator: {
             userAgent: navigator.userAgent,
@@ -222,14 +301,19 @@
         vendor: navigator.vendor
       };
       
-      // Check for spoofed values
-      const spoofedUserAgents = ['QuantumOS', 'HoloWindows', 'CyberMac', 'UltraLinux', 'NeoAndroid'];
-      const isSpoofed = spoofedUserAgents.some(fake => status.navigator.userAgent.includes(fake));
+      // Check for spoofed values - now looking for realistic but uncommon values
+      const hasUncommonValues = [
+        (status.navigator.userAgent.includes('Edg/') && !status.navigator.userAgent.includes('Edge/')),
+        [20, 24, 32].includes(status.navigator.hardwareConcurrency),
+        status.navigator.deviceMemory && [2, 32].includes(status.navigator.deviceMemory),
+        ['de-DE', 'fr-FR', 'es-ES', 'it-IT'].includes(status.navigator.language)
+      ].some(condition => condition);
       
-      if (isSpoofed) {
-        console.log('✅ Navigator: Successfully spoofed with', status.navigator.platform);
+      if (hasUncommonValues) {
+        console.log('✅ Navigator: Subtly spoofed with realistic values');
+        console.log('🔧 Detected: Uncommon but realistic configuration');
       } else {
-        console.warn('⚠️ Navigator: May not be spoofed');
+        console.warn('⚠️ Navigator: Using common configuration (may not be spoofed)');
         console.log('🌐 UserAgent:', status.navigator.userAgent);
       }
     } catch (e) {
@@ -244,15 +328,21 @@
         colorDepth: screen.colorDepth
       };
       
-      // Check for unrealistic resolutions
-      const unrealisticResolutions = [3333, 7777, 9999, 12000, 16384, 32768, 999, 1337];
-      const hasUnrealistic = unrealisticResolutions.includes(status.screen.width) || 
-                            unrealisticResolutions.includes(status.screen.height);
+      // Check for uncommon but realistic resolutions
+      const uncommonResolutions = [
+        (status.screen.width === 2048 && status.screen.height === 1152),
+        (status.screen.width === 3440 && status.screen.height === 1440), // Ultrawide
+        (status.screen.width === 2560 && status.screen.height === 1080), // Ultrawide FHD
+        (status.screen.width === 1680 && status.screen.height === 1050), // Old 20" monitors
+        (status.screen.width === 2560 && status.screen.height === 1600)  // 16:10 QHD
+      ];
       
-      if (hasUnrealistic) {
-        console.log('✅ Screen: Successfully spoofed with', status.screen.width + 'x' + status.screen.height);
+      const hasUncommonRes = uncommonResolutions.some(condition => condition);
+      
+      if (hasUncommonRes) {
+        console.log('✅ Screen: Spoofed with uncommon but realistic resolution', status.screen.width + 'x' + status.screen.height);
       } else {
-        console.warn('⚠️ Screen: May not be spoofed');
+        console.log('ℹ️ Screen: Using common resolution (good for blending in)');
         console.log('📺 Resolution:', status.screen.width + 'x' + status.screen.height);
       }
     } catch (e) {
@@ -270,14 +360,21 @@
         
         status.webgl = { vendor, renderer };
         
-        // Check for spoofed values
-        const spoofedVendors = ['QuantumTech', 'HyperGraphics', 'CyberVision', 'MetaGraphics', 'NeuralProcessing', 'FutureGPU'];
-        const isSpoofed = spoofedVendors.some(fake => vendor.includes(fake));
+        // Check for realistic GPU spoofing
+        const realisticGPUs = [
+          vendor.includes('Intel Inc.'),
+          vendor.includes('NVIDIA Corporation'),
+          vendor.includes('ATI Technologies Inc.'),
+          vendor.includes('AMD'),
+          vendor.includes('Apple Inc.')
+        ];
         
-        if (isSpoofed) {
-          console.log('✅ WebGL: Successfully spoofed with', vendor);
+        const hasRealisticGPU = realisticGPUs.some(condition => condition);
+        
+        if (hasRealisticGPU) {
+          console.log('✅ WebGL: Spoofed with realistic GPU vendor:', vendor);
         } else {
-          console.warn('⚠️ WebGL: May not be spoofed');
+          console.warn('⚠️ WebGL: May not be spoofed or using original values');
           console.log('🎮 Vendor:', vendor);
           console.log('🖥️ Renderer:', renderer);
         }

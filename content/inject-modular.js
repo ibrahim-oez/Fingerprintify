@@ -10,10 +10,10 @@
     window.FingerprintifyModules.logger.info('Fingerprintify', 'Modular protection system starting...');
   }
   
-  // Set global flags
+  // Set global flags with crypto-secure randomization
   window._fingerprintifyActive = true;
   window._fingerprintifySession = 'session_' + Date.now();
-  window._fingerprintifyProfile = Math.floor(Math.random() * 10) + 1;
+  window._fingerprintifyProfile = crypto.getRandomValues(new Uint32Array(1))[0] % 1000000;
   
   // Initialize protection system
   async function initializeProtection() {
@@ -55,34 +55,54 @@
       // Apply protection modules in order
       const results = {};
       
-      // 1. Navigator spoofing (affects other modules)
+      // 1. Stealth (must be first to hide other modifications)
+      if (modules.stealth) {
+        modules.stealth.apply(protectionSettings);
+      }
+      
+      // 2. Navigator spoofing (affects other modules)
       if (modules.navigator) {
         results.navigator = modules.navigator.apply(protectionSettings, modules.utils);
       }
       
-      // 2. Screen spoofing
+      // 3. Screen spoofing
       if (modules.screen) {
         results.screen = modules.screen.apply(protectionSettings, modules.utils);
       }
       
-      // 3. WebGL spoofing
+      // 4. WebGL spoofing
       if (modules.webgl) {
         results.webgl = modules.webgl.apply(protectionSettings, modules.utils);
       }
       
-      // 4. Canvas protection
+      // 5. Canvas protection
       if (modules.canvas) {
         modules.canvas.apply(protectionSettings, modules.utils);
       }
       
-      // 5. Audio spoofing
+      // 6. Audio spoofing
       if (modules.audio) {
         modules.audio.apply(protectionSettings, modules.utils);
       }
       
-      // 6. WebRTC blocking (important for security)
+      // 7. WebRTC blocking (important for security)
       if (modules.webrtc) {
         modules.webrtc.apply(protectionSettings);
+      }
+      
+      // 8. Battery API blocking
+      if (modules.battery) {
+        modules.battery.apply(protectionSettings);
+      }
+      
+      // 9. Speech synthesis spoofing
+      if (modules.speech) {
+        modules.speech.apply(protectionSettings, modules.utils);
+      }
+      
+      // 10. Fingerprint tracking (should be last)
+      if (modules.tracker) {
+        modules.tracker.apply(protectionSettings);
       }
       
       if (modules.logger) {

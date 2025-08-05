@@ -19,64 +19,70 @@ window.FingerprintifyModules.navigator = {
       window.FingerprintifyModules.logger.info('Navigator', 'Applying spoofing...');
     }
     
-    // VÖLLIG UNREALISTISCHE UserAgents - Existieren nicht!
+    // REALISTISCHE UserAgents - Echte Browser mit leichten Variationen
     const spoofedUserAgents = [
-      'Mozilla/5.0 (Windows NT 15.0; Win128; x128) AppleWebKit/999.99 (KHTML, like Gecko) Chrome/250.0.0.0 Safari/999.99',
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 20_50_99) AppleWebKit/777.77 (KHTML, like Gecko) Chrome/300.0.0.0 Safari/777.77',
-      'Mozilla/5.0 (QuantumOS 12.5; Quantum64; x64) AppleWebKit/888.88 (KHTML, like Gecko) HyperBrowser/500.0.0.0',
-      'Mozilla/5.0 (Windows NT 12.0; ARM128; aarch128) WebKit/666.66 (KHTML, like Gecko) FutureFox/999.0',
-      'Mozilla/5.0 (UltraLinux 99.9; x256) AppleWebKit/1111.11 (KHTML, like Gecko) QuantumChrome/777.0.0.0',
-      'Mozilla/5.0 (HoloWindows 25.0; Win256; x256) HyperWebKit/2000.0 (KHTML, like Gecko) MetaBrowser/1000.0.0.0',
-      'Mozilla/5.0 (CyberMac; Intel Quantum X 50_0_0) AppleWebKit/3000.0 (KHTML, like Gecko) NeuralSafari/888.0.0.0',
-      'Mozilla/5.0 (NeoAndroid 25.0; ARM256; aarch256) AppleWebKit/4444.44 (KHTML, like Gecko) CyberChrome/1500.0.0.0',
-      'Mozilla/5.0 (HyperOS 99.0; Quantum128; x128) AppleWebKit/5555.55 (KHTML, like Gecko) UltraBrowser/2000.0.0.0',
-      'Mozilla/5.0 (MetaWindows 50.0; Win512; x512) NeuralWebKit/9999.99 (KHTML, like Gecko) QuantumFox/5000.0'
+      // Windows Chrome Varianten (realistisch)
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+      
+      // Windows Firefox Varianten
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/120.0',
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/119.0',
+      
+      // macOS Safari Varianten
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15',
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      
+      // Linux Chrome/Firefox
+      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/120.0',
+      
+      // Edge Varianten
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0'
     ];
     
-    // UNMÖGLICHE Platforms - Existieren nicht!
+    // REALISTISCHE Platforms - Echte Betriebssysteme
     const spoofedPlatforms = [
-      'Win128', 'Win256', 'Win512', 'Win1024',
-      'MacQuantum', 'MacNeural', 'MacHolo', 'MacCyber',
-      'Linux x256', 'Linux x512', 'Linux quantum64', 'Linux neural128',
-      'UltraLinux', 'HyperLinux', 'QuantumLinux', 'NeuralLinux',
-      'QuantumOS', 'HoloWindows', 'CyberMac', 'NeoAndroid',
-      'ARM256', 'ARM512', 'ARM1024', 'QuantumARM',
-      'HyperX86', 'UltraX64', 'QuantumX128', 'NeuralX256',
-      'MetaOS', 'HyperOS', 'FutureOS', 'NeuroOS'
+      'Win32',           // Windows Standard
+      'MacIntel',        // macOS Intel
+      'Linux x86_64',    // Linux 64-bit
+      'Linux i686',      // Linux 32-bit (seltener)
+      'Win64'            // Windows 64-bit (seltener)
     ];
     
-    // UNREALISTISCHE CPU-Kerne
+    // REALISTISCHE CPU-Kerne - Echte Hardware
     const spoofedCores = [
-      3, 5, 7, 9, 11, 13, 15, 17, 20, 24, 28, 32, 
-      48, 64, 96, 128, 256, 512, 1024, 2048, 4096,
-      33, 37, 41, 47, 53, 67, 73, 97, 129, 257
+      2, 4, 6, 8, 12, 16, // Standard Desktop/Laptop CPUs 
+      2, 4, 6, 8, 12, 16, // Standard Desktop/Laptop CPUs
+      20, 24, 32         // High-end Workstation CPUs (aber realistisch)
     ];
     
     // Create fake navigator object
     const fakeNav = {
       userAgent: utils.randomChoice(spoofedUserAgents),
       platform: utils.randomChoice(spoofedPlatforms), 
-      language: 'quantum-QU',
-      languages: ['quantum-QU', 'neural-NE', 'en-US'],
+      language: utils.randomChoice(['en-US', 'en-GB', 'de-DE', 'fr-FR', 'es-ES', 'it-IT', 'pt-BR', 'ru-RU', 'ja-JP', 'ko-KR']),
+      languages: [utils.randomChoice(['en-US', 'en-GB', 'de-DE', 'fr-FR']), 'en'],
       hardwareConcurrency: utils.randomChoice(spoofedCores),
-      deviceMemory: [3, 6, 12, 24, 48, 96, 128, 256, 512, 1024][utils.randomInt(0, 9)],
-      maxTouchPoints: [0, 1, 2, 5, 10, 16, 32, 64, 128, 256][utils.randomInt(0, 9)],
-      cookieEnabled: [true, false][utils.randomInt(0, 1)],
-      doNotTrack: ['1', '0', null, 'unspecified', 'quantum', 'neural'][utils.randomInt(0, 5)],
-      vendor: utils.randomChoice(['Quantum Corp', 'HoloTech Inc', 'CyberSoft Ltd', 'QuantumTech Inc.', 'NeuralProcessing Ltd.']),
+      deviceMemory: utils.randomChoice([2, 4, 8, 16, 32]), // Realistische RAM-Werte
+      maxTouchPoints: utils.randomChoice([0, 1, 5, 10]), // 0=Desktop, 1=seltener Touch, 5/10=Standard Touch
+      cookieEnabled: true, // Immer true (realistisch)
+      doNotTrack: utils.randomChoice(['1', '0', null]), // Nur realistische Werte
+      vendor: utils.randomChoice(['Google Inc.', 'Apple Computer, Inc.', '', 'Mozilla']), // Echte Browser-Vendors
       vendorSub: '',
       product: 'Gecko',
       productSub: '20030107',
       appName: 'Netscape',
-      appVersion: utils.randomChoice(['5.0 (QuantumOS)', '5.0 (HoloWindows)', '5.0 (CyberMac)']),
+      appVersion: utils.randomChoice(['5.0 (Windows)', '5.0 (Macintosh)', '5.0 (X11)']),
       onLine: true,
       plugins: [],
       mimeTypes: [],
       userAgentData: {
         brands: [
-          { brand: 'QuantumBrowser', version: '500' },
+          { brand: 'Google Chrome', version: '120' },
           { brand: 'Not)A;Brand', version: '99' },
-          { brand: 'HyperChrome', version: '888' }
+          { brand: 'Chromium', version: '120' }
         ],
         mobile: false,
         platform: utils.randomChoice(spoofedPlatforms)
